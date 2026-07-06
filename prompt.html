@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>提示詞｜視覺化學習單工房</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-page="prompt">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Prompt Builder</p>
+        <h1>視覺設計提示詞產生器</h1>
+      </div>
+      <nav aria-label="主要頁面">
+        <a href="templates.html">範本</a>
+        <a href="prompt.html" class="active">提示詞</a>
+        <a href="draw.html">生成</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section page-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">LLM Settings</p>
+            <h2>API 與學習單條件</h2>
+          </div>
+          <span class="privacy">API key 僅用於這次瀏覽器請求，不會寫入檔案。</span>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            LLM Provider
+            <select id="llmProvider">
+              <option value="openai" selected>OpenAI</option>
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </label>
+          <label>
+            LLM API Key
+            <input id="apiKey" type="password" autocomplete="off" placeholder="依 Provider 貼上 API key">
+          </label>
+          <label>
+            模型
+            <input id="modelName" value="gpt-5.2" autocomplete="off">
+          </label>
+          <label>
+            常用模型
+            <select id="modelPreset"></select>
+          </label>
+          <p id="providerHelp" class="field-help"></p>
+
+          <label>
+            年段
+            <select id="stage">
+              <option value="low">低年級</option>
+              <option value="middle">中年級</option>
+              <option value="high" selected>高年級</option>
+            </select>
+          </label>
+          <label>
+            科目
+            <input id="subject" value="自然科學">
+          </label>
+
+          <label>
+            學習單大類
+            <select id="worksheetFamily">
+              <option value="relation">關係運算類</option>
+              <option value="class">類運算類</option>
+            </select>
+          </label>
+          <label>
+            視覺化學習單類型
+            <select id="visualType"></select>
+          </label>
+          <p id="visualTypeHelp" class="field-help wide"></p>
+
+          <label class="wide">
+            學習主題
+            <input id="topic" value="水循環與日常生活">
+          </label>
+          <div class="actions wide compact-actions">
+            <button id="generateLearningFields" class="primary">用 LLM 產出學習目標 / 內容 / 能力</button>
+          </div>
+          <p id="fieldStatus" class="status wide" role="status"></p>
+
+          <label class="wide">
+            學習目標
+            <textarea id="goal" rows="4">學生能辨認蒸發、凝結、降水、逕流，並用圖像說明水循環。</textarea>
+          </label>
+          <label class="wide">
+            學習內容
+            <textarea id="learningContent" rows="4">水循環包含蒸發、凝結、降水、地表逕流與地下水，並和天氣、河川、生活用水相關。</textarea>
+          </label>
+          <label class="wide">
+            學習能力
+            <textarea id="learningAbility" rows="3">觀察圖像、擷取關鍵詞、說明概念之間的因果與循環關係。</textarea>
+          </label>
+
+          <label>
+            視覺風格
+            <select id="style">
+              <option>乾淨資訊圖表</option>
+              <option>手繪課堂筆記</option>
+              <option>可愛插畫</option>
+              <option>極簡黑白列印</option>
+            </select>
+          </label>
+          <label>
+            輸出比例
+            <select id="ratio">
+              <option>A4 直式</option>
+              <option>A4 橫式</option>
+              <option>16:9 投影片</option>
+              <option>方形社群圖</option>
+            </select>
+          </label>
+          <label>
+            支架程度
+            <select id="scaffold">
+              <option>高支架：提供圖示、關鍵詞與句型</option>
+              <option selected>中支架：提供提示語與部分填空</option>
+              <option>低支架：開放整理與延伸挑戰</option>
+            </select>
+          </label>
+          <label>
+            Canva 產出用途
+            <select id="canvaUse">
+              <option selected>可列印學習單圖片</option>
+              <option>課堂投影活動頁</option>
+              <option>學生小組討論海報</option>
+              <option>課末形成性評量單</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="generatePrompt" class="primary">產生最佳化提示詞</button>
+          <button id="copyPrompt">複製提示詞</button>
+          <button id="savePrompt">下載提示詞檔案</button>
+        </div>
+        <p id="promptStatus" class="status" role="status"></p>
+        <textarea id="promptOutput" class="prompt-output" rows="12" aria-label="產生的提示詞"></textarea>
+      </section>
+    </main>
+
+    <script src="template_data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>範本｜視覺化學習單工房</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-page="templates">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Templates</p>
+        <h1>視覺化學習單範本</h1>
+      </div>
+      <nav aria-label="主要頁面">
+        <a href="templates.html" class="active">範本</a>
+        <a href="prompt.html">提示詞</a>
+        <a href="draw.html">生成</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section page-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Image Samples</p>
+            <h2>學習單範本圖</h2>
+          </div>
+        </div>
+        <div id="templateGrid" class="template-grid template-grid-wide" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="template_data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

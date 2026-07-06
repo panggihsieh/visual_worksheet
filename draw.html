@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>生成｜視覺化學習單工房</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-page="draw">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Drawing Tools</p>
+        <h1>生成視覺化學習單圖片</h1>
+      </div>
+      <nav aria-label="主要頁面">
+        <a href="templates.html">範本</a>
+        <a href="prompt.html">提示詞</a>
+        <a href="draw.html" class="active">生成</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section draw-layout page-shell">
+        <div>
+          <p class="eyebrow">OpenAI Image / External Tools</p>
+          <h2>貼上提示詞後生成圖片</h2>
+          <div class="form-grid single-column">
+            <label>
+              OpenAI API Key
+              <input id="apiKey" type="password" autocomplete="off" placeholder="sk-...">
+            </label>
+            <label>
+              OpenAI 模型
+              <input id="modelName" value="gpt-5.2" autocomplete="off">
+            </label>
+            <label class="wide">
+              圖片提示詞
+              <textarea id="promptOutput" rows="12" class="prompt-output"></textarea>
+            </label>
+          </div>
+          <div class="actions">
+            <button id="generateImage" class="primary">用 OpenAI 生成圖片</button>
+            <button id="copyPrompt">複製提示詞</button>
+            <button id="openChatGPT">開啟 ChatGPT</button>
+            <button id="openCanva">開啟 Canva</button>
+            <button id="openFirefly">開啟 Firefly</button>
+          </div>
+          <p id="drawStatus" class="status" role="status"></p>
+        </div>
+        <div class="result-frame">
+          <img id="resultImage" src="image_sample/worksheet-06-fishbone.svg" alt="產生結果預覽">
+        </div>
+      </section>
+    </main>
+
+    <script src="template_data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
