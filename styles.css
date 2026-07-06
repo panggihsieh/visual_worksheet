@@ -213,8 +213,8 @@ nav a.active {
 
 .big-icon-link {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   display: inline-grid;
   place-items: center;
   border: 1px solid #9fc7c4;
@@ -232,20 +232,17 @@ nav a.active {
   transform: translateY(-1px);
 }
 
-.big-icon-link svg {
-  width: 48px;
-  height: 48px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 4;
+.big-icon-link img {
+  display: block;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
 }
 
 .big-icon-link::after {
   position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
+  right: calc(100% + 10px);
+  top: 50%;
   width: max-content;
   max-width: min(320px, 80vw);
   border: 1px solid #bfd8d8;
@@ -259,7 +256,7 @@ nav a.active {
   line-height: 1.35;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -6px);
+  transform: translate(8px, -50%);
   transition: opacity 160ms ease, transform 160ms ease;
   z-index: 20;
 }
@@ -267,38 +264,7 @@ nav a.active {
 .big-icon-link:hover::after,
 .big-icon-link:focus-visible::after {
   opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.large-download-shape {
-  animation: large-download-bob 1.35s ease-in-out infinite;
-}
-
-.large-key-shape {
-  transform-origin: 40px 33px;
-  animation: large-key-pulse 1.35s ease-in-out infinite;
-}
-
-@keyframes large-download-bob {
-  0%,
-  100% {
-    transform: translateY(-1px);
-  }
-
-  50% {
-    transform: translateY(4px);
-  }
-}
-
-@keyframes large-key-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.08);
-  }
+  transform: translate(0, -50%);
 }
 
 main {
