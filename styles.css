@@ -505,6 +505,11 @@ main {
   line-height: 1.75;
 }
 
+.required-note {
+  color: #d21d1d;
+  font-weight: 900;
+}
+
 .safety-note {
   margin-top: 18px;
 }
