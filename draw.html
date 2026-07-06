@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>生成｜視覺化學習單工房</title>
+    <title>生成學習單｜視覺化學習單工房</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body data-page="draw">
@@ -13,9 +13,10 @@
         <h1>生成視覺化學習單圖片</h1>
       </div>
       <nav aria-label="主要頁面">
-        <a href="templates.html">範本</a>
-        <a href="prompt.html">提示詞</a>
-        <a href="draw.html" class="active">生成</a>
+        <a href="templates.html">學習單範本</a>
+        <a href="free-api.html">免費 API Key</a>
+        <a href="prompt.html">產生提示詞</a>
+        <a href="draw.html" class="active">生成學習單</a>
       </nav>
     </header>
 
@@ -23,7 +24,7 @@
       <section class="section draw-layout page-shell">
         <div>
           <p class="eyebrow">OpenAI Image / External Tools</p>
-          <h2>貼上提示詞後生成圖片</h2>
+          <h2>貼上提示詞後生成學習單</h2>
           <div class="form-grid single-column">
             <label>
               OpenAI API Key
@@ -31,15 +32,19 @@
             </label>
             <label>
               OpenAI 模型
-              <input id="modelName" value="gpt-5.2" autocomplete="off">
+              <select id="modelName"></select>
             </label>
+            <div class="actions compact-actions">
+              <button id="reloadModels" type="button">重新載入模型</button>
+            </div>
+            <p id="modelStatus" class="status wide" role="status"></p>
             <label class="wide">
               圖片提示詞
               <textarea id="promptOutput" rows="12" class="prompt-output"></textarea>
             </label>
           </div>
           <div class="actions">
-            <button id="generateImage" class="primary">用 OpenAI 生成圖片</button>
+            <button id="generateImage" class="primary">用 OpenAI 生成學習單</button>
             <button id="copyPrompt">複製提示詞</button>
             <button id="openChatGPT">開啟 ChatGPT</button>
             <button id="openCanva">開啟 Canva</button>

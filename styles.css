@@ -31,6 +31,7 @@ textarea {
 }
 
 button {
+  position: relative;
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -38,6 +39,8 @@ button {
   color: var(--ink);
   padding: 0 14px;
   cursor: pointer;
+  overflow: hidden;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 button:hover {
@@ -48,6 +51,66 @@ button.primary {
   border-color: var(--blue);
   background: var(--blue);
   color: #fff;
+}
+
+button.copy-feedback {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(60, 143, 92, 0.24);
+  animation: copy-pop 520ms ease;
+}
+
+button.copy-feedback::after {
+  position: absolute;
+  inset: -40% auto -40% -45%;
+  width: 36%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  content: "";
+  transform: skewX(-18deg);
+  animation: copy-sheen 720ms ease;
+}
+
+@keyframes copy-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  38% {
+    transform: scale(1.06);
+  }
+
+  70% {
+    transform: scale(0.98);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes copy-sheen {
+  from {
+    left: -45%;
+  }
+
+  to {
+    left: 120%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+
+  button.copy-feedback {
+    animation: none;
+  }
+
+  button.copy-feedback::after {
+    display: none;
+  }
 }
 
 .topbar {
@@ -316,6 +379,43 @@ main {
   line-height: 1.6;
 }
 
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.guide-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.05);
+}
+
+.guide-card h2,
+.guide-card p {
+  margin: 0;
+}
+
+.guide-card p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.guide-card ol {
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.75;
+}
+
+.safety-note {
+  margin-top: 18px;
+}
+
 .draw-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
@@ -428,6 +528,10 @@ textarea {
 
   .template-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guide-grid {
+    grid-template-columns: 1fr;
   }
 
   .directory-strip {

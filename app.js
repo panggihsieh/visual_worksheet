@@ -7,31 +7,27 @@ const remoteDirs = {
 const llmProviders = {
   openai: {
     label: "OpenAI",
-    defaultModel: "gpt-5.2",
-    modelOptions: ["gpt-5.2", "gpt-5.1", "gpt-4.1", "gpt-4.1-mini"],
+    modelsEndpoint: "https://api.openai.com/v1/models",
     keyPlaceholder: "sk-...",
-    help: "純前端模式：不自動查詢模型清單，請使用常用模型或手動輸入模型代號。"
+    help: "貼上 API key 後會即時向 OpenAI 查詢可用模型。"
   },
   anthropic: {
     label: "Anthropic Claude",
-    defaultModel: "claude-sonnet-4-5",
-    modelOptions: ["claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5"],
+    modelsEndpoint: "https://api.anthropic.com/v1/models",
     keyPlaceholder: "sk-ant-...",
-    help: "純前端模式：不自動查詢模型清單，請使用常用模型或手動輸入模型代號。"
+    help: "貼上 API key 後會即時向 Anthropic 查詢可用模型。"
   },
   gemini: {
     label: "Google Gemini",
-    defaultModel: "gemini-2.5-pro",
-    modelOptions: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+    modelsEndpoint: "https://generativelanguage.googleapis.com/v1beta/models",
     keyPlaceholder: "AIza...",
-    help: "純前端模式：不自動查詢模型清單，請使用常用模型或手動輸入模型代號。"
+    help: "貼上 API key 後會即時向 Google Gemini 查詢可用模型。"
   },
   openrouter: {
     label: "OpenRouter",
-    defaultModel: "openai/gpt-5.2",
-    modelOptions: ["openai/gpt-5.2", "openai/gpt-4.1", "anthropic/claude-sonnet-4.5", "google/gemini-2.5-pro"],
+    modelsEndpoint: "https://openrouter.ai/api/v1/models",
     keyPlaceholder: "sk-or-...",
-    help: "純前端模式：不自動查詢模型清單，可填 OpenRouter 模型代號，例如 openai/gpt-5.2。"
+    help: "貼上 API key 後會即時向 OpenRouter 查詢可用模型。"
   }
 };
 
@@ -124,6 +120,8 @@ const templates = (window.WORKSHEET_TEMPLATES || []).map((template) => {
 });
 
 let selectedTemplate = templates[0];
+let modelLoadTimer;
+const llmSettingsKey = "visualWorksheet.llmSettings";
 
 function selectTemplateFromQuery() {
   const id = new URLSearchParams(window.location.search).get("template");
@@ -138,18 +136,138 @@ function selectedProvider() {
   return llmProviders[selectedProviderKey()];
 }
 
+function readLinkedLlmSettings() {
+  try {
+    return JSON.parse(sessionStorage.getItem(llmSettingsKey)) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveLinkedLlmSettings() {
+  const settings = {
+    provider: selectedProviderKey(),
+    apiKey: $("apiKey")?.value.trim() || "",
+    model: $("modelName")?.value || ""
+  };
+  sessionStorage.setItem(llmSettingsKey, JSON.stringify(settings));
+}
+
+function applyLinkedLlmSettings() {
+  const settings = readLinkedLlmSettings();
+  if ($("llmProvider") && llmProviders[settings.provider]) {
+    $("llmProvider").value = settings.provider;
+  }
+  if ($("apiKey") && settings.apiKey) {
+    $("apiKey").value = settings.apiKey;
+  }
+}
+
 function updateProviderUi() {
   if (!$("llmProvider")) return;
   const provider = selectedProvider();
-  $("modelName").value = provider.defaultModel;
-  if ($("modelPreset")) {
-    $("modelPreset").innerHTML = provider.modelOptions.map((model) => `
-      <option value="${model}">${model}</option>
-    `).join("");
-    $("modelPreset").value = provider.defaultModel;
-  }
   $("apiKey").placeholder = provider.keyPlaceholder;
   $("providerHelp").textContent = provider.help;
+  clearModelOptions("貼上 API key 後會自動載入模型。");
+}
+
+function setModelStatus(message) {
+  if ($("modelStatus")) $("modelStatus").textContent = message;
+}
+
+function clearModelOptions(message) {
+  if (!$("modelName")) return;
+  $("modelName").innerHTML = `<option value="">尚未載入模型</option>`;
+  $("modelName").disabled = true;
+  setModelStatus(message);
+}
+
+function setModelOptions(models, preferredModel = "") {
+  if (!$("modelName")) return;
+  $("modelName").innerHTML = models.map((model) => `
+    <option value="${model}">${model}</option>
+  `).join("");
+  if (preferredModel && models.includes(preferredModel)) {
+    $("modelName").value = preferredModel;
+  }
+  $("modelName").disabled = false;
+  setModelStatus(`已即時載入 ${models.length} 個模型。`);
+  saveLinkedLlmSettings();
+}
+
+function filterTextModels(models) {
+  const blocked = /(embedding|embed|whisper|tts|audio|speech|image|vision|moderation|dall-e|sora)/i;
+  return [...new Set(models)]
+    .filter((model) => model && !blocked.test(model))
+    .sort((a, b) => a.localeCompare(b));
+}
+
+async function fetchOpenAiModels(apiKey) {
+  const response = await fetch(llmProviders.openai.modelsEndpoint, {
+    headers: { "Authorization": `Bearer ${apiKey}` }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `OpenAI models request failed: ${response.status}`);
+  return filterTextModels((data.data || []).map((model) => model.id));
+}
+
+async function fetchAnthropicModels(apiKey) {
+  const response = await fetch(llmProviders.anthropic.modelsEndpoint, {
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `Anthropic models request failed: ${response.status}`);
+  return filterTextModels((data.data || []).map((model) => model.id));
+}
+
+async function fetchGeminiModels(apiKey) {
+  const endpoint = `${llmProviders.gemini.modelsEndpoint}?key=${encodeURIComponent(apiKey)}`;
+  const response = await fetch(endpoint);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `Gemini models request failed: ${response.status}`);
+  return filterTextModels((data.models || [])
+    .filter((model) => (model.supportedGenerationMethods || []).includes("generateContent"))
+    .map((model) => model.name?.replace(/^models\//, "")));
+}
+
+async function fetchOpenRouterModels(apiKey) {
+  const headers = apiKey ? { "Authorization": `Bearer ${apiKey}` } : {};
+  const response = await fetch(llmProviders.openrouter.modelsEndpoint, { headers });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `OpenRouter models request failed: ${response.status}`);
+  return filterTextModels((data.data || []).map((model) => model.id));
+}
+
+async function fetchProviderModels() {
+  const providerKey = selectedProviderKey();
+  const apiKey = $("apiKey")?.value.trim();
+  if (!apiKey) {
+    clearModelOptions("貼上 API key 後會自動載入模型。");
+    return;
+  }
+
+  clearModelOptions(`正在向 ${selectedProvider().label} 即時查詢模型...`);
+  try {
+    let models = [];
+    if (providerKey === "openai") models = await fetchOpenAiModels(apiKey);
+    if (providerKey === "anthropic") models = await fetchAnthropicModels(apiKey);
+    if (providerKey === "gemini") models = await fetchGeminiModels(apiKey);
+    if (providerKey === "openrouter") models = await fetchOpenRouterModels(apiKey);
+    if (!models.length) throw new Error("沒有找到可用文字生成模型");
+    setModelOptions(models, readLinkedLlmSettings().model);
+    fillDraftPrompt();
+  } catch (error) {
+    clearModelOptions(`無法即時載入模型：${error.message}`);
+  }
+}
+
+function scheduleModelLoad() {
+  clearTimeout(modelLoadTimer);
+  modelLoadTimer = setTimeout(fetchProviderModels, 700);
 }
 
 function familyFromControl() {
@@ -359,8 +477,9 @@ async function callOpenRouterChat(apiKey, model, input) {
 async function callPromptProvider(input) {
   const providerKey = selectedProviderKey();
   const apiKey = $("apiKey")?.value.trim();
-  const model = $("modelName")?.value.trim() || selectedProvider().defaultModel;
+  const model = $("modelName")?.value;
   if (!apiKey) return "";
+  if (!model) throw new Error("請先等待模型清單載入並選擇模型");
   if (providerKey === "openai") return responseText(await callOpenAiResponses(apiKey, model, input));
   if (providerKey === "anthropic") return callAnthropicMessages(apiKey, model, input);
   if (providerKey === "gemini") return callGeminiGenerateContent(apiKey, model, input);
@@ -445,18 +564,37 @@ ${fallbackPrompt()}`;
   }
 }
 
-async function copyPrompt() {
+async function copyPrompt(event) {
+  const button = event?.currentTarget;
   const prompt = $("promptOutput")?.value.trim() || fallbackPrompt();
   try {
     await navigator.clipboard.writeText(prompt);
     const status = $("promptStatus") || $("drawStatus");
     if (status) status.textContent = "提示詞已複製。";
+    animateCopyButton(button, "已複製");
   } catch (error) {
     $("promptOutput")?.focus();
     $("promptOutput")?.select();
     const status = $("promptStatus") || $("drawStatus");
     if (status) status.textContent = "瀏覽器未允許剪貼簿，已選取提示詞。";
+    animateCopyButton(button, "已選取");
   }
+}
+
+function animateCopyButton(button, label) {
+  if (!button) return;
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+  button.textContent = label;
+  button.classList.remove("copy-feedback");
+  void button.offsetWidth;
+  button.classList.add("copy-feedback");
+
+  window.clearTimeout(button.copyFeedbackTimer);
+  button.copyFeedbackTimer = window.setTimeout(() => {
+    button.classList.remove("copy-feedback");
+    button.textContent = originalText;
+  }, 1500);
 }
 
 function savePromptFile() {
@@ -475,11 +613,15 @@ function savePromptFile() {
 
 async function generateImage() {
   const key = $("apiKey").value.trim();
-  const model = $("modelName").value.trim() || "gpt-5.2";
+  const model = $("modelName").value;
   const prompt = $("promptOutput").value.trim();
   const status = $("drawStatus");
   if (!key || !prompt) {
     status.textContent = "請先貼上 OpenAI API key 與圖片提示詞。";
+    return;
+  }
+  if (!model) {
+    status.textContent = "請先等待模型清單載入並選擇模型。";
     return;
   }
 
@@ -509,16 +651,29 @@ function initTemplatesPage() {
 function initPromptPage() {
   selectTemplateFromQuery();
   if ($("worksheetFamily")) $("worksheetFamily").value = selectedTemplate?.family || "relation";
+  applyLinkedLlmSettings();
   updateProviderUi();
   renderVisualTypes();
   fillDraftPrompt();
+  if ($("apiKey").value.trim()) fetchProviderModels();
 
   $("llmProvider").addEventListener("change", () => {
+    saveLinkedLlmSettings();
     updateProviderUi();
+    fetchProviderModels();
     fillDraftPrompt();
   });
-  $("modelPreset").addEventListener("change", () => {
-    $("modelName").value = $("modelPreset").value;
+  $("apiKey").addEventListener("input", () => {
+    saveLinkedLlmSettings();
+    scheduleModelLoad();
+  });
+  $("apiKey").addEventListener("change", () => {
+    saveLinkedLlmSettings();
+    fetchProviderModels();
+  });
+  $("reloadModels").addEventListener("click", fetchProviderModels);
+  $("modelName").addEventListener("change", () => {
+    saveLinkedLlmSettings();
     fillDraftPrompt();
   });
   $("worksheetFamily").addEventListener("change", () => {
@@ -532,7 +687,7 @@ function initPromptPage() {
   });
   $("generateLearningFields").addEventListener("click", generateLearningFields);
   $("generatePrompt").addEventListener("click", generatePrompt);
-  $("copyPrompt").addEventListener("click", copyPrompt);
+  $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
   $("savePrompt").addEventListener("click", savePromptFile);
   ["stage", "subject", "topic", "goal", "learningContent", "learningAbility", "style", "ratio", "scaffold", "canvaUse"].forEach((id) => {
     $(id).addEventListener("input", fillDraftPrompt);
@@ -540,8 +695,40 @@ function initPromptPage() {
 }
 
 function initDrawPage() {
+  const linkedSettings = readLinkedLlmSettings();
+  if (linkedSettings.provider && linkedSettings.provider !== "openai") {
+    clearModelOptions(`產生提示詞頁目前使用 ${llmProviders[linkedSettings.provider]?.label || linkedSettings.provider}；生成學習單目前只支援 OpenAI 模型。`);
+  } else {
+    applyLinkedLlmSettings();
+    clearModelOptions("貼上 OpenAI API key 後會自動載入模型。");
+    if ($("apiKey").value.trim()) fetchProviderModels();
+  }
+  $("apiKey").addEventListener("input", () => {
+    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
+      provider: "openai",
+      apiKey: $("apiKey").value.trim(),
+      model: $("modelName")?.value || ""
+    }));
+    scheduleModelLoad();
+  });
+  $("apiKey").addEventListener("change", () => {
+    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
+      provider: "openai",
+      apiKey: $("apiKey").value.trim(),
+      model: $("modelName")?.value || ""
+    }));
+    fetchProviderModels();
+  });
+  $("reloadModels").addEventListener("click", fetchProviderModels);
+  $("modelName").addEventListener("change", () => {
+    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
+      provider: "openai",
+      apiKey: $("apiKey").value.trim(),
+      model: $("modelName").value
+    }));
+  });
   $("generateImage").addEventListener("click", generateImage);
-  $("copyPrompt").addEventListener("click", copyPrompt);
+  $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
   $("openChatGPT").addEventListener("click", () => openTool("https://chatgpt.com/"));
   $("openCanva").addEventListener("click", () => openTool("https://www.canva.com/ai-image-generator/"));
   $("openFirefly").addEventListener("click", () => openTool("https://firefly.adobe.com/"));

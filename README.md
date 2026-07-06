@@ -56,4 +56,6 @@ python3 -m venv .venv
 
 API key 只保存在瀏覽器欄位中，不寫入專案檔案。圖片生成按鈕目前只支援 OpenAI；其他 provider 可以用「複製提示詞」後貼到 Canva、ChatGPT 或 Firefly。
 
-此專案採純前端模式開放給老師使用，因此不會用 API key 自動查詢 provider 的完整模型清單。模型欄位採「常用模型下拉建議 + 手動輸入」方式，避免 CORS、權限與 provider 模型清單 API 差異造成不穩定。
+此專案採純前端模式開放給老師使用，模型欄位會在老師貼上 API key 後，即時呼叫 provider 的 models endpoint 取得可用模型並填入下拉選單。若某 provider 不允許瀏覽器前端查詢模型，頁面會顯示載入失敗訊息，避免老師手動輸入錯誤模型代號。
+
+「產生提示詞」與「生成學習單」會在同一瀏覽器工作階段內連動 provider、API key 與模型。若產生提示詞頁使用 OpenAI，生成學習單頁會自動帶入同一把 key 並載入同一個模型；若使用 Gemini、OpenRouter 或 Anthropic，生成學習單頁會提示目前圖片生成只支援 OpenAI。

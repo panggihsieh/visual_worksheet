@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>提示詞｜視覺化學習單工房</title>
+    <title>產生提示詞｜視覺化學習單工房</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body data-page="prompt">
@@ -13,9 +13,10 @@
         <h1>視覺設計提示詞產生器</h1>
       </div>
       <nav aria-label="主要頁面">
-        <a href="templates.html">範本</a>
-        <a href="prompt.html" class="active">提示詞</a>
-        <a href="draw.html">生成</a>
+        <a href="templates.html">學習單範本</a>
+        <a href="free-api.html">免費 API Key</a>
+        <a href="prompt.html" class="active">產生提示詞</a>
+        <a href="draw.html">生成學習單</a>
       </nav>
     </header>
 
@@ -45,12 +46,12 @@
           </label>
           <label>
             模型
-            <input id="modelName" value="gpt-5.2" autocomplete="off">
+            <select id="modelName"></select>
           </label>
-          <label>
-            常用模型
-            <select id="modelPreset"></select>
-          </label>
+          <div class="actions compact-actions">
+            <button id="reloadModels" type="button">重新載入模型</button>
+          </div>
+          <p id="modelStatus" class="status wide" role="status"></p>
           <p id="providerHelp" class="field-help"></p>
 
           <label>

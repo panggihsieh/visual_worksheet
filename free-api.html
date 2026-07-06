@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>免費 API Key｜視覺化學習單工房</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-page="free-api">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Free LLM API</p>
+        <h1>免費 API Key 取得方式</h1>
+      </div>
+      <nav aria-label="主要頁面">
+        <a href="templates.html">學習單範本</a>
+        <a href="free-api.html" class="active">免費 API Key</a>
+        <a href="prompt.html">產生提示詞</a>
+        <a href="draw.html">生成學習單</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="section page-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Recommended</p>
+            <h2>建議老師優先使用這兩種</h2>
+          </div>
+        </div>
+
+        <div class="guide-grid">
+          <article class="guide-card">
+            <div>
+              <p class="eyebrow">Option 1</p>
+              <h2>Google Gemini API Key</h2>
+              <p>適合一般老師先使用。Google AI Studio 可建立 Gemini API key，部分模型有免費額度。</p>
+            </div>
+            <ol>
+              <li>開啟 Google AI Studio API Keys 頁面。</li>
+              <li>用自己的 Google 帳號登入。</li>
+              <li>點選 Create API key。</li>
+              <li>複製產生的 API key。</li>
+              <li>回到產生提示詞頁，Provider 選 Google Gemini，貼上 API key。</li>
+              <li>模型清單會即時載入，選一個模型後開始產生內容。</li>
+            </ol>
+            <div class="actions">
+              <a class="button-link primary" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">前往 Gemini API Key</a>
+              <a class="button-link" href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" rel="noopener">官方說明</a>
+            </div>
+          </article>
+
+          <article class="guide-card">
+            <div>
+              <p class="eyebrow">Option 2</p>
+              <h2>OpenRouter API Key</h2>
+              <p>適合想使用多種免費模型的老師。OpenRouter 有免費模型集合，但模型速度、限制與可用性可能變動。</p>
+            </div>
+            <ol>
+              <li>開啟 OpenRouter 登入頁。</li>
+              <li>用 Google、GitHub 或 Email 建立帳號。</li>
+              <li>進入 API Keys 頁面建立新的 key。</li>
+              <li>複製 API key。</li>
+              <li>回到產生提示詞頁，Provider 選 OpenRouter，貼上 API key。</li>
+              <li>模型清單會即時載入，選擇免費或可用模型後開始產生內容。</li>
+            </ol>
+            <div class="actions">
+              <a class="button-link primary" href="https://openrouter.ai/sign-in" target="_blank" rel="noopener">前往 OpenRouter</a>
+              <a class="button-link" href="https://openrouter.ai/collections/free-models" target="_blank" rel="noopener">查看免費模型</a>
+            </div>
+          </article>
+        </div>
+
+        <div class="field-help safety-note">
+          API key 請老師自行保管，不要貼到公開文件、社群訊息、簡報截圖或學生可看到的頁面。本網站不會把 API key 寫入檔案。
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
