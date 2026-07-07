@@ -304,6 +304,12 @@ function friendlyProviderError(error) {
   return message;
 }
 
+function promptFailureAdvice(error) {
+  const reason = friendlyProviderError(error);
+  const provider = selectedProvider()?.label || "目前 Provider";
+  return `產生失敗：${reason}。已先保留本機學生版與教師版提示詞草稿。解決方式：1. 確認 ${provider} API key 正確且額度可用；2. 確認 Provider 與 API key 類型一致；3. 按「重新載入模型」並選擇可用模型；4. 若顯示逾時，請稍後重試或換較快模型；5. 也可以直接複製目前草稿或送到生成學習單頁使用。`;
+}
+
 function filterTextModels(models) {
   const blocked = /(embedding|embed|whisper|tts|audio|speech|image|vision|moderation|dall-e|sora)/i;
   return [...new Set(models)]
@@ -1035,7 +1041,7 @@ function withTimeout(promise, timeoutMs, message) {
 
 async function generatePrompt() {
   const generateButton = $("generatePrompt");
-  $("promptStatus").textContent = "提示詞產生中，最多等待 20 秒...";
+  $("promptStatus").textContent = "提示詞產生中...";
   if (generateButton) generateButton.disabled = true;
   const promptInstruction = (sourcePrompt) => `你是資深教材視覺設計師。請根據以下資料，輸出一段可交給設計工具或圖片生成模型使用的高品質繁體中文提示詞。只輸出提示詞，不要解釋。
 
@@ -1072,12 +1078,12 @@ ${sourcePrompt}`;
     if ($("studentPromptOutput")) $("studentPromptOutput").value = studentPrompt || studentFallback;
     if ($("teacherPromptOutput")) $("teacherPromptOutput").value = teacherPrompt || teacherFallback;
     savePromptDraft();
-    $("promptStatus").textContent = "學生版與教師版提示詞已分別產生。";
+    $("promptStatus").textContent = "產生成功：學生版與教師版提示詞已分別產生。";
   } catch (error) {
     if ($("studentPromptOutput")) $("studentPromptOutput").value = studentFallback;
     if ($("teacherPromptOutput")) $("teacherPromptOutput").value = teacherFallback;
     savePromptDraft();
-    $("promptStatus").textContent = `使用本機學生版與教師版提示詞。原因：${friendlyProviderError(error)}`;
+    $("promptStatus").textContent = promptFailureAdvice(error);
   } finally {
     if (generateButton) generateButton.disabled = false;
   }
