@@ -9,8 +9,8 @@
   <body data-page="draw">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Drawing Tools</p>
-        <h1>生成視覺化學習單圖片</h1>
+        <p class="eyebrow">Worksheet Export</p>
+        <h1>生成學習單</h1>
       </div>
       <nav aria-label="主要頁面">
         <a href="index.html">首頁</a>
@@ -22,44 +22,51 @@
     </header>
 
     <main>
-      <section class="section draw-layout page-shell">
+      <section class="section generate-page page-shell">
         <div>
-          <p class="eyebrow">OpenAI Image / External Tools</p>
-          <h2>貼上提示詞後生成學習單</h2>
-          <div class="form-grid single-column">
-            <label>
-              OpenAI API Key
-              <input id="apiKey" type="password" autocomplete="off" placeholder="sk-...">
-            </label>
-            <label>
-              OpenAI 模型
-              <select id="modelName"></select>
-            </label>
-            <div class="actions compact-actions">
-              <button id="reloadModels" type="button">重新載入模型</button>
-            </div>
-            <p id="modelStatus" class="status wide" role="status"></p>
-            <label class="wide">
-              圖片提示詞
-              <textarea id="promptOutput" rows="12" class="prompt-output"></textarea>
-            </label>
-          </div>
+          <p class="eyebrow">Linked Prompt</p>
+          <h2>把提示詞送到可生成學習單的工具</h2>
+          <p class="lead-copy">這裡會自動讀取「產生提示詞」頁目前產出的內容。選擇工具入口後，系統會先複製提示詞，再開啟對應服務。</p>
+          <label class="prompt-panel">
+            目前提示詞
+            <textarea id="promptOutput" rows="16" class="prompt-output" placeholder="請先到「產生提示詞」頁建立內容，或在這裡直接貼上提示詞。"></textarea>
+          </label>
           <div class="actions">
-            <button id="generateImage" class="primary">用 OpenAI 生成學習單</button>
-            <button id="copyPrompt">複製提示詞</button>
-            <button id="openChatGPT">開啟 ChatGPT</button>
-            <button id="openCanva">開啟 Canva</button>
-            <button id="openFirefly">開啟 Firefly</button>
+            <button id="copyPrompt" class="primary">複製提示詞</button>
+            <a id="backToPrompt" class="button-link" href="prompt.html">回到產生提示詞</a>
           </div>
           <p id="drawStatus" class="status" role="status"></p>
         </div>
-        <div class="result-frame">
-          <img id="resultImage" src="image_sample/worksheet-06-fishbone.svg" alt="產生結果預覽">
+        <div class="tool-entry-grid" aria-label="生成工具入口">
+          <article class="tool-entry-card">
+            <div>
+              <p class="eyebrow">Editable Design</p>
+              <h3>Canva Education</h3>
+              <p>適合把提示詞做成可編輯、可分層、可列印的學習單版面。</p>
+            </div>
+            <button id="openCanvaEdu" class="tool-entry-button" type="button">開啟 Canva Edu 入口</button>
+          </article>
+          <article class="tool-entry-card">
+            <div>
+              <p class="eyebrow">Gemini Image</p>
+              <h3>Gemini 繪圖模型</h3>
+              <p>適合快速產生學習單草圖、圖像版面與可視覺化的課堂素材。</p>
+            </div>
+            <button id="openGeminiImage" class="tool-entry-button" type="button">開啟 Gemini 繪圖入口</button>
+          </article>
+          <article class="tool-entry-card">
+            <div>
+              <p class="eyebrow">OpenAI Image</p>
+              <h3>OpenAI 繪圖模型</h3>
+              <p>適合使用 ChatGPT Images 生成或修改學習單視覺版本。</p>
+            </div>
+            <button id="openOpenAiImage" class="tool-entry-button" type="button">開啟 OpenAI 繪圖入口</button>
+          </article>
         </div>
       </section>
     </main>
 
-    <script src="template_data.js"></script>
-    <script src="app.js"></script>
+    <script src="template_data.js?v=20260707"></script>
+    <script src="app.js?v=20260707-provider-images"></script>
   </body>
 </html>

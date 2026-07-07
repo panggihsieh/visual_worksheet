@@ -53,6 +53,196 @@ button.primary {
   color: #fff;
 }
 
+.stage-field {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+}
+
+#stage {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+#stage option {
+  background: var(--blue);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+#stageField,
+#subjectField {
+  grid-column: 1;
+}
+
+#worksheetFamilyField,
+#visualTypeField {
+  grid-column: 2;
+}
+
+#providerHelp,
+#visualTypeHelp {
+  display: none;
+}
+
+.stage-field::after {
+  position: absolute;
+  right: 12px;
+  bottom: -10px;
+  width: min(180px, 36vw);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--yellow), var(--blue), var(--teal));
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.2);
+  transform-origin: right center;
+}
+
+.stage-field.stage-pulse {
+  animation: stage-focus-ring 1100ms ease both;
+}
+
+.stage-field.stage-pulse::after {
+  animation: stage-flow-line 1100ms ease both;
+}
+
+.stage-generation-actions {
+  align-items: center;
+}
+
+.stage-generate-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding-inline: 16px;
+  box-shadow: 0 12px 28px rgba(36, 107, 254, 0.18);
+}
+
+.stage-generate-button::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0 18%, rgba(255, 255, 255, 0.26) 34%, transparent 52%);
+  content: "";
+  transform: translateX(-120%);
+}
+
+.stage-generate-button.stage-pulse {
+  animation: stage-button-pop 900ms ease both;
+}
+
+.stage-generate-button.stage-pulse::before {
+  animation: stage-button-sheen 900ms ease both;
+}
+
+.stage-generate-button span,
+.stage-generate-button strong {
+  position: relative;
+  z-index: 1;
+}
+
+.stage-generate-button strong {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 5px 9px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.stage-generate-cue {
+  margin: 0;
+  color: #315f63;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.stage-generate-cue.stage-pulse {
+  animation: stage-cue-fade 1100ms ease both;
+}
+
+@keyframes stage-focus-ring {
+  0% {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  34% {
+    border-color: rgba(36, 107, 254, 0.55);
+    background: rgba(36, 107, 254, 0.07);
+    box-shadow: 0 0 0 6px rgba(36, 107, 254, 0.12);
+  }
+
+  100% {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@keyframes stage-flow-line {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+}
+
+@keyframes stage-button-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  42% {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px rgba(36, 107, 254, 0.28);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes stage-button-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes stage-cue-fade {
+  0% {
+    color: var(--muted);
+    transform: translateX(-4px);
+  }
+
+  35% {
+    color: var(--teal);
+    transform: translateX(0);
+  }
+
+  100% {
+    color: #315f63;
+  }
+}
+
 button.copy-feedback {
   border-color: var(--green);
   background: var(--green);
@@ -110,6 +300,14 @@ button.copy-feedback::after {
 
   button.copy-feedback::after {
     display: none;
+  }
+
+  .stage-field.stage-pulse,
+  .stage-field.stage-pulse::after,
+  .stage-generate-button.stage-pulse,
+  .stage-generate-button.stage-pulse::before,
+  .stage-generate-cue.stage-pulse {
+    animation: none;
   }
 }
 
@@ -521,6 +719,59 @@ main {
   align-items: stretch;
 }
 
+.generate-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.lead-copy {
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.prompt-panel {
+  margin-top: 18px;
+}
+
+.tool-entry-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.tool-entry-card {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.05);
+}
+
+.tool-entry-card h3,
+.tool-entry-card p {
+  margin: 0;
+}
+
+.tool-entry-card h3 {
+  font-size: 22px;
+}
+
+.tool-entry-card p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.tool-entry-button {
+  justify-self: start;
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
 .panel,
 .result-frame {
   border: 1px solid var(--line);
@@ -576,8 +827,39 @@ textarea {
   gap: 14px;
 }
 
+.blue-panel {
+  position: relative;
+  min-width: 0;
+  border: 3px solid var(--blue);
+  border-radius: 10px;
+  background: rgba(36, 107, 254, 0.035);
+  padding: 18px;
+}
+
+.blue-panel legend {
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  padding: 6px 12px;
+  font-weight: 900;
+}
+
+.panel-grid {
+  margin-top: 4px;
+}
+
 .form-grid.single-column {
   grid-template-columns: 1fr;
+}
+
+.learning-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.learning-fields-grid textarea {
+  min-height: 130px;
 }
 
 .wide {
@@ -602,6 +884,49 @@ textarea {
   line-height: 1.55;
 }
 
+.prompt-output-panel {
+  margin-top: 14px;
+}
+
+.prompt-output-panel .actions {
+  margin-top: 4px;
+}
+
+.prompt-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.prompt-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.inline-copy {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.prompt-output-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.split-output {
+  min-height: 250px;
+}
+
+.copy-split {
+  justify-self: start;
+}
+
 @media (max-width: 960px) {
   .topbar,
   .section-head {
@@ -611,6 +936,7 @@ textarea {
 
   .hero,
   .draw-layout,
+  .generate-page,
   .template-detail {
     grid-template-columns: 1fr;
   }
@@ -641,8 +967,17 @@ textarea {
   .template-grid,
   .directory-strip,
   .form-grid,
+  .learning-fields-grid,
+  .prompt-output-grid,
   .input-row {
     grid-template-columns: 1fr;
+  }
+
+  #stageField,
+  #subjectField,
+  #worksheetFamilyField,
+  #visualTypeField {
+    grid-column: 1;
   }
 
   .hero h2 {
@@ -651,5 +986,10 @@ textarea {
 
   .hero img {
     min-height: 280px;
+  }
+
+  .stage-generate-button {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

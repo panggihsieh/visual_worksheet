@@ -11,6 +11,27 @@ const llmProviders = {
     keyPlaceholder: "sk-...",
     help: "貼上 API key 後會即時向 OpenAI 查詢可用模型。"
   },
+  deepseek: {
+    label: "DeepSeek",
+    modelsEndpoint: "https://api.deepseek.com/models",
+    chatEndpoint: "https://api.deepseek.com/chat/completions",
+    keyPlaceholder: "sk-...",
+    help: "貼上 DeepSeek API key 後會即時向 DeepSeek 查詢可用模型。"
+  },
+  minimax: {
+    label: "MiniMax",
+    modelsEndpoint: "https://api.minimax.io/v1/models",
+    chatEndpoint: "https://api.minimax.io/v1/chat/completions",
+    keyPlaceholder: "MiniMax API key",
+    help: "貼上 MiniMax API key 後會即時向 MiniMax 查詢可用模型。"
+  },
+  glm: {
+    label: "GLM / Z.AI",
+    modelsEndpoint: "https://api.z.ai/api/paas/v4/models",
+    chatEndpoint: "https://api.z.ai/api/paas/v4/chat/completions",
+    keyPlaceholder: "Z.AI API key",
+    help: "貼上 GLM / Z.AI API key 後會即時向 Z.AI 查詢可用模型。"
+  },
   anthropic: {
     label: "Anthropic Claude",
     modelsEndpoint: "https://api.anthropic.com/v1/models",
@@ -28,6 +49,33 @@ const llmProviders = {
     modelsEndpoint: "https://openrouter.ai/api/v1/models",
     keyPlaceholder: "sk-or-...",
     help: "貼上 API key 後會即時向 OpenRouter 查詢可用模型。"
+  }
+};
+
+const imageGenerationProviders = {
+  openai: {
+    label: "OpenAI GPT Image",
+    defaultModel: "gpt-image-2",
+    models: ["gpt-image-2", "gpt-image-1"],
+    help: "使用 OpenAI 自家的 GPT Image 繪圖模型生成學習單圖片。"
+  },
+  gemini: {
+    label: "Gemini Image",
+    defaultModel: "gemini-3.1-flash-image",
+    models: ["gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-2.5-flash-image"],
+    help: "使用 Google Gemini 的原生圖片生成模型生成學習單圖片。"
+  },
+  minimax: {
+    label: "MiniMax Image",
+    defaultModel: "image-01",
+    models: ["image-01"],
+    help: "使用 MiniMax 的 Image Generation 模型生成學習單圖片。"
+  },
+  glm: {
+    label: "GLM Image",
+    defaultModel: "glm-image",
+    models: ["glm-image", "cogview-4-250304"],
+    help: "使用 Z.AI 的 GLM-Image / CogView 圖片模型生成學習單圖片。"
   }
 };
 
@@ -122,6 +170,7 @@ const templates = (window.WORKSHEET_TEMPLATES || []).map((template) => {
 let selectedTemplate = templates[0];
 let modelLoadTimer;
 const llmSettingsKey = "visualWorksheet.llmSettings";
+const promptDraftKey = "visualWorksheet.promptDraft";
 
 function selectTemplateFromQuery() {
   const id = new URLSearchParams(window.location.search).get("template");
@@ -129,7 +178,10 @@ function selectTemplateFromQuery() {
 }
 
 function selectedProviderKey() {
-  return llmProviders[$("llmProvider")?.value] ? $("llmProvider").value : "openai";
+  const controlValue = $("llmProvider")?.value;
+  if (llmProviders[controlValue]) return controlValue;
+  const linkedProvider = readLinkedLlmSettings().provider;
+  return llmProviders[linkedProvider] ? linkedProvider : "openai";
 }
 
 function selectedProvider() {
@@ -153,6 +205,15 @@ function saveLinkedLlmSettings() {
   sessionStorage.setItem(llmSettingsKey, JSON.stringify(settings));
 }
 
+function readPromptDraft() {
+  return sessionStorage.getItem(promptDraftKey) || "";
+}
+
+function savePromptDraft(prompt = $("promptOutput")?.value || "") {
+  const value = prompt || $("studentPromptOutput")?.value || "";
+  sessionStorage.setItem(promptDraftKey, value);
+}
+
 function applyLinkedLlmSettings() {
   const settings = readLinkedLlmSettings();
   if ($("llmProvider") && llmProviders[settings.provider]) {
@@ -166,9 +227,49 @@ function applyLinkedLlmSettings() {
 function updateProviderUi() {
   if (!$("llmProvider")) return;
   const provider = selectedProvider();
-  $("apiKey").placeholder = provider.keyPlaceholder;
-  $("providerHelp").textContent = provider.help;
+  if ($("apiKey")) $("apiKey").placeholder = provider.keyPlaceholder;
+  if ($("providerHelp")) $("providerHelp").textContent = provider.help;
   clearModelOptions("貼上 API key 後會自動載入模型。");
+}
+
+function imageGenerationStatusForProvider(providerKey = selectedProviderKey()) {
+  const provider = llmProviders[providerKey] || llmProviders.openai;
+  const imageProvider = imageGenerationProviders[providerKey];
+  if (imageProvider) {
+    return `已沿用產生提示詞頁的 ${provider.label} API key，並自動使用 ${imageProvider.label} 繪圖模型。`;
+  }
+  return `${provider.label} 目前沒有可直接呼叫的原生繪圖模型；請改用有圖片模型的 Provider，或使用下方外部工具。`;
+}
+
+function renderImageModelOptions(providerKey = selectedProviderKey()) {
+  if (!$("imageModelName")) return;
+  const imageProvider = imageGenerationProviders[providerKey];
+  if (!imageProvider) {
+    $("imageModelName").innerHTML = `<option value="">此 Provider 無原生繪圖模型</option>`;
+    $("imageModelName").disabled = true;
+    return;
+  }
+  $("imageModelName").innerHTML = imageProvider.models.map((model) => `
+    <option value="${model}">${model}</option>
+  `).join("");
+  $("imageModelName").value = imageProvider.defaultModel;
+  $("imageModelName").disabled = false;
+}
+
+function updateDrawProviderUi() {
+  const providerKey = selectedProviderKey();
+  const provider = selectedProvider();
+  const imageProvider = imageGenerationProviders[providerKey];
+  if ($("drawProviderEyebrow")) $("drawProviderEyebrow").textContent = imageProvider ? `${imageProvider.label} / Native Image` : `${provider.label} / External Tools`;
+  if ($("apiKeyLabel")) $("apiKeyLabel").textContent = `${provider.label} API Key`;
+  if ($("modelLabel")) $("modelLabel").textContent = `${provider.label} 模型`;
+  if ($("imageModelLabel")) $("imageModelLabel").textContent = imageProvider ? `${imageProvider.label} 繪圖模型` : "繪圖模型";
+  if ($("apiKey")) $("apiKey").placeholder = provider.keyPlaceholder;
+  renderImageModelOptions(providerKey);
+  if ($("generateImage")) {
+    $("generateImage").textContent = imageProvider ? `用 ${imageProvider.label} 生成學習單` : "無原生繪圖模型";
+    $("generateImage").disabled = !imageProvider;
+  }
 }
 
 function setModelStatus(message) {
@@ -195,6 +296,14 @@ function setModelOptions(models, preferredModel = "") {
   saveLinkedLlmSettings();
 }
 
+function friendlyProviderError(error) {
+  const message = error?.message || String(error);
+  if (selectedProviderKey() === "openai" && /incorrect api key|invalid api key|authentication/i.test(message)) {
+    return `${message} 目前 Provider 是 OpenAI；如果你使用 DeepSeek、MiniMax 或 GLM / Z.AI API key，請改選正確 Provider 後重新載入模型。`;
+  }
+  return message;
+}
+
 function filterTextModels(models) {
   const blocked = /(embedding|embed|whisper|tts|audio|speech|image|vision|moderation|dall-e|sora)/i;
   return [...new Set(models)]
@@ -209,6 +318,48 @@ async function fetchOpenAiModels(apiKey) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error?.message || `OpenAI models request failed: ${response.status}`);
   return filterTextModels((data.data || []).map((model) => model.id));
+}
+
+async function fetchDeepSeekModels(apiKey) {
+  return fetchOpenAiCompatibleModels("deepseek", apiKey);
+}
+
+function zAiHeaders(apiKey) {
+  return {
+    "Authorization": `Bearer ${apiKey}`,
+    "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8"
+  };
+}
+
+function modelIdsFromResponse(data) {
+  const candidates = Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : [];
+  return candidates.map((model) => {
+    if (typeof model === "string") return model;
+    return model.id || model.model || model.name?.replace(/^models\//, "") || "";
+  });
+}
+
+function openAiCompatibleHeaders(providerKey, apiKey) {
+  if (providerKey === "glm") return zAiHeaders(apiKey);
+  return { "Authorization": `Bearer ${apiKey}` };
+}
+
+async function fetchOpenAiCompatibleModels(providerKey, apiKey) {
+  const provider = llmProviders[providerKey];
+  const response = await fetch(provider.modelsEndpoint, {
+    headers: openAiCompatibleHeaders(providerKey, apiKey)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || data.message || `${provider.label} models request failed: ${response.status}`);
+  return filterTextModels(modelIdsFromResponse(data));
+}
+
+async function fetchMiniMaxModels(apiKey) {
+  return fetchOpenAiCompatibleModels("minimax", apiKey);
+}
+
+async function fetchGlmModels(apiKey) {
+  return fetchOpenAiCompatibleModels("glm", apiKey);
 }
 
 async function fetchAnthropicModels(apiKey) {
@@ -254,6 +405,9 @@ async function fetchProviderModels() {
   try {
     let models = [];
     if (providerKey === "openai") models = await fetchOpenAiModels(apiKey);
+    if (providerKey === "deepseek") models = await fetchDeepSeekModels(apiKey);
+    if (providerKey === "minimax") models = await fetchMiniMaxModels(apiKey);
+    if (providerKey === "glm") models = await fetchGlmModels(apiKey);
     if (providerKey === "anthropic") models = await fetchAnthropicModels(apiKey);
     if (providerKey === "gemini") models = await fetchGeminiModels(apiKey);
     if (providerKey === "openrouter") models = await fetchOpenRouterModels(apiKey);
@@ -261,7 +415,7 @@ async function fetchProviderModels() {
     setModelOptions(models, readLinkedLlmSettings().model);
     fillDraftPrompt();
   } catch (error) {
-    clearModelOptions(`無法即時載入模型：${error.message}`);
+    clearModelOptions(`無法即時載入模型：${friendlyProviderError(error)}`);
   }
 }
 
@@ -306,6 +460,214 @@ function syncSelectedTemplate() {
   selectedTemplate = templates.find((template) => template.baseType === visualType) || selectedTemplate || templates[0];
 }
 
+function visualStructureRequirement(typeKey, label) {
+  const requirements = {
+    "mind-map": [
+      "主視覺區必須是「心智圖」，不能改成一般分欄講義、流程圖、循環圖、表格或問答單。",
+      "心智圖結構：中央放置主題節點，從中心向外延伸 4 到 6 條放射分支。",
+      "每條分支都要有可編輯文字標籤、關鍵詞空格與例子空格。",
+      "分支可包含：核心概念、生活例子、關鍵詞、疑問、延伸應用、我的想法。",
+      "所有分支線、節點框、圖示與文字標籤都必須分層；若工具支援圖層，必須能單獨選取與移動。"
+    ],
+    "concept-map": [
+      "主視覺區必須是「概念圖」，不能改成心智圖、流程圖或一般分欄講義。",
+      "概念圖結構：核心概念在上方或中央，下面安排階層節點，節點之間用連線與連結詞說明關係。",
+      "每個節點、連結詞與例子欄都必須是可編輯文字圖層。"
+    ],
+    fishbone: [
+      "主視覺區必須是「魚骨圖」，不能改成心智圖、流程圖或一般分欄講義。",
+      "魚骨圖結構：右側或中央有問題主軸，左右斜向骨架分出原因分類，每個原因分類有證據或例子空格。",
+      "魚骨線條、分類標籤、原因框與結論框都必須分層可編輯。"
+    ],
+    flowchart: [
+      "主視覺區必須是「流程圖」，不能改成心智圖、循環圖或一般分欄講義。",
+      "流程圖結構：用步驟框、箭頭與至少一個判斷點呈現順序或因果。",
+      "每個步驟框、箭頭、判斷點與反思欄都必須分層可編輯。"
+    ],
+    timeline: [
+      "主視覺區必須是「時間軸」，不能改成心智圖、流程圖或一般分欄講義。",
+      "時間軸結構：一條清楚時間線，安排 4 到 6 個時間節點、事件卡與因果/變化註記。",
+      "每個節點、事件卡與註記文字都必須分層可編輯。"
+    ],
+    cycle: [
+      "主視覺區必須是「循環圖」，不能改成心智圖、流程圖或一般分欄講義。",
+      "循環圖結構：4 到 6 個循環節點用方向箭頭連成閉合循環，旁邊保留變化說明空格。",
+      "每個節點、箭頭、標籤與說明框都必須分層可編輯。"
+    ],
+    venn: [
+      "主視覺區必須是「韋恩圖」，不能改成心智圖、T 字圖或一般分欄講義。",
+      "韋恩圖結構：兩個或三個重疊圓，分別標示差異區與共同區，旁邊加入總結句框。",
+      "圓形、區域標籤與填答文字都必須分層可編輯。"
+    ],
+    "t-chart": [
+      "主視覺區必須是「T 字圖」，不能改成心智圖、韋恩圖或一般分欄講義。",
+      "T 字圖結構：左右雙欄比較，包含欄名、證據列、判斷欄與結論句框。",
+      "欄線、欄名、每格文字與結論框都必須分層可編輯。"
+    ],
+    kwl: [
+      "主視覺區必須是「KWL 表」，不能改成心智圖、T 字圖或一般分欄講義。",
+      "KWL 表結構：三欄分別為「我已知道 K」「我想知道 W」「我學到了 L」，另可加入下一步問題。",
+      "表格線、欄名、提示語與填答格都必須分層可編輯。"
+    ],
+    "decision-tree": [
+      "主視覺區必須是「決策樹」，不能改成心智圖、流程圖或一般分欄講義。",
+      "決策樹結構：從一個起點問題分出條件判斷與選項分支，末端有結果比較與理由欄。",
+      "每個分支線、條件框、結果框與理由文字都必須分層可編輯。"
+    ]
+  };
+  return (requirements[typeKey] || [
+    `主視覺區必須清楚呈現「${label}」結構，不可改成一般分欄講義。`,
+    "所有圖表元素與文字都必須分層可編輯。"
+  ]).map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function templatePatternRequirement(typeKey, templateName) {
+  const patterns = {
+    "mind-map": [
+      "必須提取「心智圖學習單」範本的主要圖樣：上方標題列與姓名日期框、中央大型主題圓、由中心向外放射的 6 條連線、6 個圓角分支框、底部「我的一句總結」長條填答框。",
+      "中央主題節點放在主視覺區正中央；6 個分支框分布在左上、正上、右上、左下、正下、右下，不可改成直式清單或左右兩欄文字。",
+      "分支框文字可依主題改為「原因、概念、例子、問題、證據、應用」或更貼合內容的 6 個繁體中文標籤。",
+      "放射連線、中心圓、分支框、底部總結框、所有文字都要是可單獨選取與編輯的圖層；若使用圖片生成模型，則需清楚保留這些圖樣。"
+    ],
+    "concept-map": [
+      "必須提取「概念圖學習單」範本的主要圖樣：上方標題列與姓名日期框、上方核心概念框、第二層 3 個概念框、第三層 2 個細節/應用框、節點之間的階層連線、底部一句總結框。",
+      "核心概念框位於上方中央，向下連到上位概念、關係詞、例子，再由中間層延伸到細節與應用；不可改成心智圖放射狀或普通段落。",
+      "所有節點框、連線、連結詞、例子欄與總結框都要分層可編輯。"
+    ],
+    fishbone: [
+      "必須提取「魚骨圖學習單」範本的主要圖樣：上方標題列與姓名日期框、水平主骨線、右側箭頭與核心問題框、上下成對斜骨、原因分類框、證據框、底部一句總結框。",
+      "主骨由左往右指向核心問題；至少 4 組上下斜骨，每組包含上方原因分類與下方證據/例子，不可改成一般條列原因表。",
+      "主骨線、箭頭、斜骨、核心問題框、原因框、證據框與文字標籤都要分層可編輯。"
+    ],
+    flowchart: [
+      "必須提取「流程圖學習單」範本的主要圖樣：上方標題列與姓名日期框、橫向排列的 4 個步驟圓角框、步驟間方向箭頭、下方判斷/修正框、底部一句總結框。",
+      "四個步驟框必須由左到右用箭頭連接；下方要保留一個判斷或修正區，不可改成一般文字任務欄。",
+      "步驟框、箭頭、判斷框、填答線與所有文字都要分層可編輯。"
+    ],
+    timeline: [
+      "必須提取「時間軸學習單」範本的主要圖樣：上方標題列與姓名日期框、中間一條水平時間線、6 個圓形時間節點、上下交錯的事件卡、底部一句總結框。",
+      "事件卡必須沿時間線上下交錯排列，形成清楚順序感；不可改成一般表格或段落式講義。",
+      "時間線、節點圓、事件卡、事件標籤、因果註記與總結框都要分層可編輯。"
+    ],
+    kwl: [
+      "必須提取「KWL 表學習單」範本的主要圖樣：上方標題列與姓名日期框、四個直欄卡片，欄名依序為 K 已知、W 想知道、L 學到、Next 下一步，每欄內有多條書寫線，底部一句總結框。",
+      "四欄必須並排呈現，欄頭使用色塊，欄內保留填答線；不可改成問答清單或兩欄表。",
+      "欄框、欄頭色塊、欄名、書寫線與總結框都要分層可編輯。"
+    ],
+    venn: [
+      "必須提取「韋恩圖學習單」範本的主要圖樣：上方標題列與姓名日期框、兩個大型重疊圓、左側 A 特點、右側 B 特點、中間共同點、下方比較後我發現框、底部一句總結框。",
+      "重疊圓是主視覺核心，必須保留共同區；不可改成 T 字圖、清單或普通比較表。",
+      "兩個圓、區域標籤、共同點文字、比較框與總結框都要分層可編輯。"
+    ],
+    "t-chart": [
+      "必須提取「T 字圖學習單」範本的主要圖樣：上方標題列與姓名日期框、大型外框、中央垂直分隔線、左右欄標題、左右欄多條水平書寫線、底部一句總結框。",
+      "左右雙欄必須佔據主視覺區，中央 T 字分隔線清楚；不可改成韋恩圖、心智圖或一般段落。",
+      "外框、中央分隔線、欄名、書寫線與總結框都要分層可編輯。"
+    ],
+    "decision-tree": [
+      "必須提取「決策樹學習單」範本的主要圖樣：上方標題列與姓名日期框、上方中央問題框、向下分成選項 A/B 兩個框，再各自分成兩個結果框，共 1 個起點、2 個選項、4 個結果，底部一句總結框。",
+      "樹狀分支線必須清楚呈現由上往下的判斷路徑；不可改成流程圖直線步驟或普通選擇題。",
+      "問題框、選項框、結果框、分支線、理由欄與總結框都要分層可編輯。"
+    ],
+    cycle: [
+      "必須提取「循環圖學習單」範本的主要圖樣：上方標題列與姓名日期框、5 個圓形循環節點、節點間方向線形成閉合循環、中央大型循環標籤圓、底部一句總結框。",
+      "五個節點必須環狀排列並形成閉合回路；不可改成線性流程圖、心智圖或分欄問答。",
+      "節點圓、方向線、中央圓、變化說明框、標籤與總結框都要分層可編輯。"
+    ]
+  };
+  return (patterns[typeKey] || [
+    `必須提取「${templateName}」範本的主要圖樣，主視覺不可改成一般講義。`,
+    "範本中的主要圖形、框線、連線、標籤與填答區都要分層可編輯。"
+  ]).map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function visualEffectRequirement(typeKey, label, topic = "主題") {
+  if (typeKey === "mind-map") {
+    return [
+      `必須呈現明顯的心智圖結構圖片效果：中央必須畫出「${topic}」主題圓或主題圖像，非常醒目，向外延伸彩色曲線或粗線分支。`,
+      "每個分支末端要像圖片化節點泡泡或圓角卡片，可加入小圖示、簡單插畫或象徵符號，不要只放文字標題。",
+      "分支之間要有視覺節奏與留白，整體看起來像一張可視化心智圖海報式學習單，而不是普通文字表格。",
+      "學生版分支節點保留空白框、短提示或可繪圖區；教師版在相同節點填入示範關鍵詞、例子或小型示意圖。",
+      "不合格情況：只寫出「心智圖」或「水循環心智圖」文字、在主視覺區留下空白或問號、把內容排成右側文字清單、沒有從中心放射出去的線條。以上都必須避免。"
+    ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+  }
+  return [
+    `必須呈現明顯的「${label}」圖像化效果，主圖表要像資訊圖或視覺學習單，而不是文字講義。`,
+    "使用清楚的圖形、節點、線條、箭頭、圖示與填答框，讓學生一眼看出視覺結構。"
+  ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function primaryVisualBlueprint(typeKey, topic = "主題") {
+  if (typeKey === "mind-map") {
+    return `第一優先：先畫出心智圖主圖，文字內容必須放進心智圖節點內。
+
+這段是生成規格，不可原樣印在學習單畫面上。最終畫面只能出現學習單標題、姓名日期、任務短句、節點標籤、填答空格或教師答案。
+
+心智圖主圖必須實際畫出以下元素：
+1. 中央大型主題圓或主題圖像：文字為「${topic}」。
+2. 六條彩色放射分支線，從中央主題圓向外延伸。
+3. 六個圓角節點泡泡，分布在左上、正上、右上、左下、正下、右下。
+4. 六個節點泡泡標籤建議為：蒸發、凝結、降水、地表逕流、地下水、生活用水。
+5. 學生版：每個節點泡泡內保留空白填答框或小繪圖區。
+6. 教師版：每個節點泡泡內填入短答案或示範小圖示，答案必須在泡泡內，不可另外排成清單。
+
+禁止出現在畫面上的文字：
+「此處為心智圖主視覺區」、「由設計師繪製」、「以下為節點內容說明」、「設計師請注意」、「節點1」、「節點2」、「示範答案」、「此處填入」。`;
+  }
+  return `第一優先：先畫出「${topic}」的${typeKey}主視覺結構，再安排短文字與填答區。不可用文字清單取代主圖。`;
+}
+
+function visualAcceptanceRequirement(typeKey, topic = "主題") {
+  if (typeKey === "mind-map") {
+    return [
+      `畫面中央必須看得到「${topic}」主題圓或主題圖像，不可以空白、問號或只放標題文字。`,
+      "至少要看得到 6 條由中心往外延伸的放射線，線條要連到 6 個節點泡泡或圓角分支框。",
+      "6 個分支節點必須環繞中心分布，不能集中成一欄，也不能變成右側條列清單。",
+      "每個分支節點至少要有一個短標籤、一個可填寫空格或小圖示位置。",
+      "如果主題是水循環，建議 6 個分支標籤使用：蒸發、凝結、降水、逕流、地下水、生活用水。"
+    ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+  }
+  return [
+    `主視覺必須在畫面中清楚呈現「${topic}」的${typeKey}圖解，不可只用標題或文字清單代替。`,
+    "主圖表必須有可辨識的節點、連線、箭頭、框線或表格結構。"
+  ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function outputVersionRequirement(version = "student") {
+  const requirements = {
+    student: [
+      "只產生 1 張或 1 頁「學生空白版」學習單。",
+      "保留填答線、空白框、可繪圖區與可標註區，不放答案。",
+      "心智圖節點泡泡內保留短提示與空白線，讓學生自行填入或繪圖。"
+    ],
+    teacher: [
+      "只產生 1 張或 1 頁「教師解答版」學習單。",
+      "使用與學生版完全相同的視覺化版型與主要圖樣。",
+      "在相同節點、泡泡、框線或填答區內填入參考答案、示範標註或示範繪圖重點。",
+      "答案必須放在圖表節點或填答區內，不可另外排成旁邊或下方文字清單。"
+    ]
+  };
+  return (requirements[version] || requirements.student).map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
+function outputModeRequirement(mode = "worksheet") {
+  if (mode === "svg-structure") {
+    return [
+      "只輸出 SVG-like 圖片結構版型，不要輸出一般文字講義、長段落教材或純問答單。",
+      "畫面必須像可轉成 SVG 的向量資訊圖：背景、標題列、中心節點、放射線、節點泡泡、圖示位置、填答線、檢核框都要清楚可見。",
+      "文字只允許短標籤、欄位名稱、節點名稱、極短提示、學生版空白線或教師版短答案。",
+      "不要輸出答案清單、設計師備註、圖解說明段落、版面說明文字或 markdown 條列。",
+      "若工具支援圖層，請用獨立向量形狀、線條、箭頭、圖示與可編輯文字圖層組成；若是圖片生成模型，請做成乾淨 SVG 風格的圖像結構。",
+      "主視覺心智圖必須佔 70% 以上版面，節點與連線是第一優先，文字只作為圖中標籤。"
+    ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+  }
+  return [
+    "輸出完整一頁式視覺化學習單。",
+    "保留標題、姓名日期、學習任務、主視覺圖表、填答區與檢核區。",
+    "主視覺圖仍必須優先於文字內容，不可變成文字型講義。"
+  ].map((item, index) => `${index + 1}. ${item}`).join("\n");
+}
+
 function renderTemplatesGrid() {
   if (!$("templateGrid")) return;
   $("templateGrid").innerHTML = templates.map((template) => `
@@ -326,7 +688,9 @@ function worksheetBrief() {
   const stage = stageGuides[$("stage")?.value] || stageGuides.high;
   const family = familyFromControl();
   const visualType = visualTypeFromControl();
+  const outputModeKey = $("outputMode")?.value || "worksheet";
   return {
+    visualTypeKey: visualType.value,
     familyKey: normalizeFamilyKey($("worksheetFamily")?.value || selectedTemplate?.family),
     stage: stage.label,
     stageReading: stage.reading,
@@ -345,8 +709,17 @@ function worksheetBrief() {
     ratio: $("ratio")?.value || "",
     scaffold: $("scaffold")?.value || "",
     canvaUse: $("canvaUse")?.value || "",
+    outputModeKey,
+    outputMode: $("outputMode")?.selectedOptions?.[0]?.textContent || "完整視覺化學習單",
     template: selectedTemplate?.name || visualType.label,
-    promptHint: selectedTemplate?.promptHint || visualType.cue
+    promptHint: selectedTemplate?.promptHint || visualType.cue,
+    primaryBlueprint: primaryVisualBlueprint(visualType.value, $("topic")?.value.trim() || ""),
+    visualStructure: visualStructureRequirement(visualType.value, visualType.label),
+    visualEffect: visualEffectRequirement(visualType.value, visualType.label, $("topic")?.value.trim() || ""),
+    visualAcceptance: visualAcceptanceRequirement(visualType.value, $("topic")?.value.trim() || ""),
+    templatePattern: templatePatternRequirement(visualType.value, selectedTemplate?.name || visualType.label),
+    outputModeRequirement: outputModeRequirement(outputModeKey),
+    outputVersionRequirement: outputVersionRequirement()
   };
 }
 
@@ -366,9 +739,27 @@ function fillLearningFields(fields) {
   fillDraftPrompt();
 }
 
-function fallbackPrompt() {
+function fallbackPrompt(version = "student") {
   const brief = worksheetBrief();
-  return `請在 Canva Edu Design 中產生一張「${brief.topic}」視覺化學習單圖片。
+  const versionLabel = version === "teacher" ? "教師解答版" : "學生空白版";
+  const versionRequirement = outputVersionRequirement(version);
+  return `請建立一份「${brief.topic}」視覺化學習單。
+
+【最優先主視覺藍圖】
+${brief.primaryBlueprint}
+
+最重要的輸出規格：
+- 以下所有規格只供生成模型理解，不可原樣出現在學習單畫面上；畫面文字只允許：標題、姓名日期、任務短句、圖表節點標籤、填答空格、檢核句、教師版答案。
+- 絕對不要把「設計師請注意」「此處為」「以下為」「節點內容說明」「主視覺區」這類提示詞或備註印在學習單中。
+- 視覺化構圖是最高優先順序：學習單第一眼必須像「圖解型學習單」，不是文字講義或文件頁。
+- 必須先完成主視覺圖，再安排文字；如果主視覺圖沒有成形，整張學習單視為不合格。
+- 主視覺圖表必須佔版面最大區域，約 55% 到 70% 的版面；文字只保留短標題、短提示、標籤、填答線與檢核句。
+- 若工具支援圖層編輯，再建立「圖層化、可編輯設計」：每個標題、題目、填空線、檢核項目、圖表標籤都必須是獨立物件或獨立文字框。
+- 若工具支援圖層編輯，所有文字必須是可點選、可改字、可調整字級與顏色的獨立文字圖層。
+- 不要把中文或任何文字烘焙、壓平、合併到圖片裡。
+- 圖表、框線、箭頭、圖示、色塊請使用形狀或元素分層製作，文字標籤另外用文字框放置。
+- 若工具有模式可選，請使用「文件 / 簡報 / 白板 / 可編輯設計」類型；若使用 Gemini、OpenAI 或其他圖片生成模型，則以完整可列印圖片為目標。
+- 若產出工具支援編輯，完成後必須能逐一選取標題、題目、提示語、填空文字與檢核項目並直接修改。
 
 年段：${brief.stage}
 科目：${brief.subject}
@@ -384,22 +775,71 @@ function fallbackPrompt() {
 比例：${brief.ratio}
 用途：${brief.canvaUse}
 支架程度：${brief.scaffold}
+輸出形式：${brief.outputMode}
+輸出版本：${versionLabel}
+輸出形式硬性規格：
+${brief.outputModeRequirement}
+
+主視覺結構硬性規格：
+${brief.visualStructure}
+
+視覺圖片效果硬性規格：
+${brief.visualEffect}
+
+主圖驗收條件：
+${brief.visualAcceptance}
+
+所選學習單範本主要圖樣：
+${brief.templatePattern}
+
+版本規格：
+${versionRequirement}
 
 設計要求：
-1. 產出完整的一頁式視覺化學習單，不要做成單張插圖或海報。
-2. 使用繁體中文，標題清楚，所有文字短而易讀，避免小字過多。
-3. 年段調整：${brief.stageReading}
-4. 任務形式：${brief.stageTask}
-5. 版面要有明確視覺層次：標題區、任務說明區、主要視覺圖表區、學生填答區、回顧檢核區。
-6. 圖像元素必須幫助理解學習內容，不要只做裝飾。
-7. 保留足夠留白與書寫框，讓學生可以圈選、標註、填空、畫圖或寫短句。
-8. 加入 1 個暖身觀察任務、2 到 3 個核心任務、1 個反思或自我檢核任務。
-9. 使用高對比、易讀字體、整齊對齊、適合列印與投影的配色。
-10. 不要放答案，不要出現浮水印，不要出現無關英文裝飾字。`;
+1. 必須遵守「輸出形式硬性規格」；若輸出形式為「只輸出 SVG 圖片結構」，就只建立向量圖解版型，不要做成文字型講義、段落文件或純問答單。
+2. 全文使用繁體中文，不要把標題或欄位翻成英文；若系統自動產生英文，請改寫為繁體中文。
+3. 主視覺圖表區必須使用「${brief.visualType}」結構，且必須符合「${brief.template}」的主要圖樣，不能替換成其他圖表或一般文字區塊。
+4. 不可只保留學習單題目而忽略範本圖樣；範本主圖樣必須佔版面最大視覺區域。
+5. 年段調整：${brief.stageReading}
+6. 任務形式：${brief.stageTask}
+7. 版面要有明確視覺層次：標題區、任務說明區、主要視覺圖表區、學生填答區、回顧檢核區。
+8. 圖像元素必須幫助理解學習內容，包含主題相關小插圖、節點圖示、箭頭、框線或情境圖，不要只做裝飾。
+9. 保留足夠留白與書寫框，讓學生可以圈選、標註、填空、畫圖或寫短句。
+10. 加入 1 個暖身觀察任務、1 到 2 個核心任務、1 個反思或自我檢核任務；任務文字要短，避免長段落。
+11. 使用高對比、易讀字體、整齊對齊、適合列印與投影的配色。
+12. 不要放答案，不要出現浮水印，不要出現無關英文裝飾字。
+13. 版面不得超過 35% 的連續文字；若內容太多，請轉成圖示、標籤、填答框或短句。
+
+請直接產生符合以上規格的視覺化學習單。`;
 }
 
 function fillDraftPrompt() {
-  if ($("promptOutput")) $("promptOutput").value = fallbackPrompt();
+  if ($("studentPromptOutput")) $("studentPromptOutput").value = fallbackPrompt("student");
+  if ($("teacherPromptOutput")) $("teacherPromptOutput").value = fallbackPrompt("teacher");
+  savePromptDraft();
+}
+
+function selectedStageLabel() {
+  const stage = $("stage");
+  return stage?.selectedOptions?.[0]?.textContent?.trim() || "目前年段";
+}
+
+function updateStageGenerationCue() {
+  const label = selectedStageLabel();
+  if ($("stageGenerateBadge")) $("stageGenerateBadge").textContent = `依${label}生成`;
+  if ($("stageGenerateCue")) {
+    $("stageGenerateCue").textContent = `已套用${label}：學習目標、內容深度與能力描述會跟著調整。`;
+  }
+}
+
+function pulseStageGenerationCue() {
+  ["stageField", "generateLearningFields", "stageGenerateCue"].forEach((id) => {
+    const element = $(id);
+    if (!element) return;
+    element.classList.remove("stage-pulse");
+    void element.offsetWidth;
+    element.classList.add("stage-pulse");
+  });
 }
 
 async function callOpenAiResponses(apiKey, model, input, withImageTool = false) {
@@ -474,6 +914,36 @@ async function callOpenRouterChat(apiKey, model, input) {
   return data.choices?.[0]?.message?.content || "";
 }
 
+async function callDeepSeekChat(apiKey, model, input) {
+  return callOpenAiCompatibleChat("deepseek", apiKey, model, input);
+}
+
+async function callOpenAiCompatibleChat(providerKey, apiKey, model, input) {
+  const provider = llmProviders[providerKey];
+  const body = { model, messages: [{ role: "user", content: input }] };
+  if (providerKey === "minimax") body.thinking = { type: "disabled" };
+
+  const response = await fetch(provider.chatEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...openAiCompatibleHeaders(providerKey, apiKey)
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || data.message || `${provider.label} request failed: ${response.status}`);
+  return data.choices?.[0]?.message?.content || "";
+}
+
+async function callMiniMaxChat(apiKey, model, input) {
+  return callOpenAiCompatibleChat("minimax", apiKey, model, input);
+}
+
+async function callGlmChat(apiKey, model, input) {
+  return callOpenAiCompatibleChat("glm", apiKey, model, input);
+}
+
 async function callPromptProvider(input) {
   const providerKey = selectedProviderKey();
   const apiKey = $("apiKey")?.value.trim();
@@ -481,6 +951,9 @@ async function callPromptProvider(input) {
   if (!apiKey) return "";
   if (!model) throw new Error("請先等待模型清單載入並選擇模型");
   if (providerKey === "openai") return responseText(await callOpenAiResponses(apiKey, model, input));
+  if (providerKey === "deepseek") return callDeepSeekChat(apiKey, model, input);
+  if (providerKey === "minimax") return callMiniMaxChat(apiKey, model, input);
+  if (providerKey === "glm") return callGlmChat(apiKey, model, input);
   if (providerKey === "anthropic") return callAnthropicMessages(apiKey, model, input);
   if (providerKey === "gemini") return callGeminiGenerateContent(apiKey, model, input);
   if (providerKey === "openrouter") return callOpenRouterChat(apiKey, model, input);
@@ -515,6 +988,8 @@ function parseJsonObject(text) {
 }
 
 async function generateLearningFields() {
+  updateStageGenerationCue();
+  pulseStageGenerationCue();
   const status = $("fieldStatus");
   const apiKey = $("apiKey").value.trim();
   if (!apiKey) {
@@ -545,36 +1020,87 @@ JSON 欄位必須是 goal, learningContent, learningAbility。
     status.textContent = "已產出，可手動修改。";
   } catch (error) {
     fillLearningFields(localLearningFields());
-    status.textContent = `API 無法完成，已用本機規則產出。原因：${error.message}`;
+    status.textContent = `API 無法完成，已用本機規則產出。原因：${friendlyProviderError(error)}`;
   }
 }
 
-async function generatePrompt() {
-  $("promptStatus").textContent = "提示詞產生中...";
-  const input = `你是資深教材視覺設計師。請根據以下資料，輸出一段可交給圖像生成工具的高品質繁體中文提示詞。只輸出提示詞，不要解釋。
+function withTimeout(promise, timeoutMs, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    })
+  ]);
+}
 
-${fallbackPrompt()}`;
+async function generatePrompt() {
+  const generateButton = $("generatePrompt");
+  $("promptStatus").textContent = "提示詞產生中，最多等待 20 秒...";
+  if (generateButton) generateButton.disabled = true;
+  const promptInstruction = (sourcePrompt) => `你是資深教材視覺設計師。請根據以下資料，輸出一段可交給設計工具或圖片生成模型使用的高品質繁體中文提示詞。只輸出提示詞，不要解釋。
+
+硬性規則：
+- 不要出現「Canva Edu Design」字樣。
+- 不要把提示詞規格改寫成會出現在畫面上的設計師備註；禁止輸出「此處為」「由設計師繪製」「以下為節點內容說明」「設計師請注意」。
+- 必須保留「最優先主視覺藍圖」，且放在輸出提示詞前段，不可刪除或摘要成一句話。
+- 必須把「視覺化構圖」放在第一優先，避免產生文字型講義。
+- 必須要求主視覺圖表佔 55% 到 70% 版面，文字不得主導版面。
+- 若用於支援圖層的設計工具，必須明確要求建立「圖層化可編輯設計」、可編輯文字圖層、分層形狀元素。
+- 若用於 Gemini、OpenAI 或其他圖片生成模型，必須保留版型結構與繁體中文可讀性，但不要要求模型提供不可行的圖層檔。
+- 必須要求全文繁體中文，避免英文標題與英文欄位。
+- 必須要求文字不要被壓平到圖片或背景中。
+- 必須保留「輸出形式硬性規格」；若指定只輸出 SVG 圖片結構，就不得產生文字講義、長段落、答案清單或設計師備註。
+- 必須保留「主視覺結構硬性規格」；若指定心智圖，就必須明確寫出中央主題節點與放射分支，不可改成一般學習單。
+- 必須保留「視覺圖片效果硬性規格」；若指定心智圖，就必須明確要求心智圖結構圖片效果、彩色分支線、節點泡泡、圖示與留白。
+- 必須保留「主圖驗收條件」；若指定心智圖，必須要求中心主題圓、6 條放射線、6 個節點泡泡都實際出現在畫面中，不能只寫文字標題。
+- 必須保留「所選學習單範本主要圖樣」；不能只產生泛用學習單，必須要求提取範本內的主要圖形、框線、節點、連線與填答區。
+
+${sourcePrompt}`;
+
+  const studentFallback = fallbackPrompt("student");
+  const teacherFallback = fallbackPrompt("teacher");
 
   try {
-    $("promptOutput").value = await callPromptProvider(input) || fallbackPrompt();
-    $("promptStatus").textContent = "提示詞已產生。";
+    const [studentPrompt, teacherPrompt] = await withTimeout(
+      Promise.all([
+        callPromptProvider(promptInstruction(studentFallback)),
+        callPromptProvider(promptInstruction(teacherFallback))
+      ]),
+      20000,
+      "API 等待超過 20 秒"
+    );
+    if ($("studentPromptOutput")) $("studentPromptOutput").value = studentPrompt || studentFallback;
+    if ($("teacherPromptOutput")) $("teacherPromptOutput").value = teacherPrompt || teacherFallback;
+    savePromptDraft();
+    $("promptStatus").textContent = "學生版與教師版提示詞已分別產生。";
   } catch (error) {
-    $("promptOutput").value = `${fallbackPrompt()}\n\nAPI 無法完成，已保留本機提示詞草稿。\n原因：${error.message}`;
-    $("promptStatus").textContent = "使用本機提示詞草稿。";
+    if ($("studentPromptOutput")) $("studentPromptOutput").value = studentFallback;
+    if ($("teacherPromptOutput")) $("teacherPromptOutput").value = teacherFallback;
+    savePromptDraft();
+    $("promptStatus").textContent = `使用本機學生版與教師版提示詞。原因：${friendlyProviderError(error)}`;
+  } finally {
+    if (generateButton) generateButton.disabled = false;
   }
 }
 
 async function copyPrompt(event) {
   const button = event?.currentTarget;
-  const prompt = $("promptOutput")?.value.trim() || fallbackPrompt();
+  const targetId = button?.dataset?.target || "studentPromptOutput";
+  const prompt = $(targetId)?.value.trim() || (page === "draw" ? "" : fallbackPrompt());
+  if (!prompt) {
+    const status = $("promptStatus") || $("drawStatus");
+    if (status) status.textContent = "目前沒有提示詞可複製。";
+    return;
+  }
   try {
     await navigator.clipboard.writeText(prompt);
+    if (targetId === "studentPromptOutput") savePromptDraft(prompt);
     const status = $("promptStatus") || $("drawStatus");
     if (status) status.textContent = "提示詞已複製。";
     animateCopyButton(button, "已複製");
   } catch (error) {
-    $("promptOutput")?.focus();
-    $("promptOutput")?.select();
+    $(targetId)?.focus();
+    $(targetId)?.select();
     const status = $("promptStatus") || $("drawStatus");
     if (status) status.textContent = "瀏覽器未允許剪貼簿，已選取提示詞。";
     animateCopyButton(button, "已選取");
@@ -598,7 +1124,13 @@ function animateCopyButton(button, label) {
 }
 
 function savePromptFile() {
-  const prompt = $("promptOutput").value.trim() || fallbackPrompt();
+  const prompt = [
+    "【學生版提示詞】",
+    $("studentPromptOutput")?.value.trim() || fallbackPrompt("student"),
+    "",
+    "【教師版提示詞】",
+    $("teacherPromptOutput")?.value.trim() || fallbackPrompt("teacher")
+  ].join("\n");
   const blob = new Blob([prompt], { type: "text/plain;charset=utf-8" });
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -611,37 +1143,277 @@ function savePromptFile() {
   $("promptStatus").textContent = `提示詞檔案已下載，建議歸檔到 ${remoteDirs.promptOutput}`;
 }
 
+function xmlEscape(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function mindMapSvg(version = "student") {
+  const brief = worksheetBrief();
+  const topic = xmlEscape(brief.topic || "水循環與日常生活");
+  const isTeacher = version === "teacher";
+  const titleSuffix = isTeacher ? "教師解答版" : "學生空白版";
+  const nodes = [
+    { label: "蒸發", answer: "太陽加熱，水變成水蒸氣", x: 300, y: 260 },
+    { label: "凝結", answer: "水蒸氣遇冷，形成雲", x: 600, y: 210 },
+    { label: "降水", answer: "雲中的水落下，形成雨", x: 900, y: 260 },
+    { label: "地表逕流", answer: "雨水沿地面流向河川", x: 330, y: 540 },
+    { label: "地下水", answer: "水滲入土壤，儲存在地下", x: 600, y: 600 },
+    { label: "生活用水", answer: "喝水、洗手、澆花都會用到水", x: 870, y: 540 }
+  ];
+  const lines = nodes.map((node) => `<path d="M600 390 L${node.x} ${node.y}" stroke="#246bfe" stroke-width="6" stroke-linecap="round" fill="none"/>`).join("");
+  const boxes = nodes.map((node) => {
+    const text = isTeacher
+      ? `<text x="${node.x}" y="${node.y - 4}" font-family="Arial, sans-serif" font-size="22" font-weight="800" fill="#0f766e" text-anchor="middle">${xmlEscape(node.label)}</text>
+         <text x="${node.x}" y="${node.y + 24}" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#334155" text-anchor="middle">${xmlEscape(node.answer)}</text>`
+      : `<text x="${node.x}" y="${node.y - 8}" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#0f766e" text-anchor="middle">${xmlEscape(node.label)}</text>
+         <path d="M${node.x - 58} ${node.y + 22} L${node.x + 58} ${node.y + 22}" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>`;
+    return `<rect x="${node.x - 96}" y="${node.y - 42}" width="192" height="88" rx="20" fill="#fff" stroke="#cbd5e1" stroke-width="3"/>${text}`;
+  }).join("");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850">
+<rect width="1200" height="850" fill="#ffffff"/>
+<rect x="0" y="0" width="1200" height="120" fill="#eef4ff"/>
+<rect x="52" y="38" width="18" height="52" rx="9" fill="#246bfe"/>
+<text x="92" y="72" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#1f2933">水循環與日常生活 心智圖學習單</text>
+<text x="92" y="104" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#64748b">${xmlEscape(brief.stage)}｜${xmlEscape(brief.subject)}｜${titleSuffix}</text>
+<rect x="930" y="34" width="218" height="58" rx="12" fill="#fff" stroke="#d7dee8" stroke-width="2"/>
+<text x="956" y="72" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#475569">姓名：      日期：</text>
+${lines}
+<circle cx="600" cy="390" r="92" fill="#246bfe"/>
+<text x="600" y="382" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#fff" text-anchor="middle">${topic}</text>
+<text x="600" y="418" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#dbeafe" text-anchor="middle">水怎麼移動？</text>
+${boxes}
+<rect x="52" y="744" width="1096" height="68" rx="12" fill="#f8fafc" stroke="#d7dee8" stroke-width="2"/>
+<text x="78" y="785" font-family="Arial, sans-serif" font-size="22" font-weight="800" fill="#246bfe">我的一句總結：</text>
+<path d="M245 780 L1090 780" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
+}
+
+function downloadMindMapSvg(version) {
+  const svg = mindMapSvg(version);
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(blob);
+  window.open(objectUrl, "_blank", "noopener,noreferrer");
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = `water-cycle-mind-map-${version === "teacher" ? "teacher" : "student"}.svg`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  $("promptStatus").textContent = version === "teacher" ? "已下載並開啟教師版心智圖 SVG 預覽。" : "已下載並開啟學生版心智圖 SVG 預覽。";
+}
+
+function imageLayoutFromPrompt(prompt) {
+  if (/16:9|橫式|投影片/i.test(prompt)) {
+    return {
+      openaiSize: "1536x1024",
+      geminiRatio: "16:9",
+      minimaxRatio: "16:9",
+      glmSize: "1728x960"
+    };
+  }
+  if (/方形|1:1|square/i.test(prompt)) {
+    return {
+      openaiSize: "1024x1024",
+      geminiRatio: "1:1",
+      minimaxRatio: "1:1",
+      glmSize: "1280x1280"
+    };
+  }
+  return {
+    openaiSize: "1024x1536",
+    geminiRatio: "3:4",
+    minimaxRatio: "3:4",
+    glmSize: "1088x1472"
+  };
+}
+
+function imagePromptForProvider(prompt) {
+  return `${prompt}
+
+請輸出一張完整可列印的視覺化學習單圖片。繁體中文文字要清楚可讀，版面包含標題、主要圖表、學生填答區與反思區，不要加浮水印。`;
+}
+
+function findBase64Image(value) {
+  if (!value || typeof value !== "object") return "";
+  if (typeof value.data === "string" && /^image\//.test(value.mime_type || value.mimeType || "")) return value.data;
+  if (typeof value.output_image?.data === "string") return value.output_image.data;
+  if (typeof value.image?.data === "string") return value.image.data;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findBase64Image(item);
+      if (found) return found;
+    }
+    return "";
+  }
+  for (const item of Object.values(value)) {
+    const found = findBase64Image(item);
+    if (found) return found;
+  }
+  return "";
+}
+
+async function callOpenAiImage(apiKey, imageModel, prompt) {
+  const layout = imageLayoutFromPrompt(prompt);
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: imageModel,
+      prompt: imagePromptForProvider(prompt),
+      size: layout.openaiSize,
+      quality: "medium",
+      output_format: "png",
+      background: "opaque"
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `OpenAI image request failed: ${response.status}`);
+  const image = data.data?.[0] || {};
+  if (image.b64_json) return { src: `data:image/png;base64,${image.b64_json}` };
+  if (image.url) return { src: image.url };
+  throw new Error("OpenAI 回應中沒有圖片資料");
+}
+
+async function callGeminiImage(apiKey, imageModel, prompt) {
+  const layout = imageLayoutFromPrompt(prompt);
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey
+    },
+    body: JSON.stringify({
+      model: imageModel,
+      input: imagePromptForProvider(prompt),
+      response_format: {
+        type: "image",
+        mime_type: "image/png",
+        aspect_ratio: layout.geminiRatio,
+        image_size: "1K"
+      }
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `Gemini image request failed: ${response.status}`);
+  const image = findBase64Image(data);
+  if (image) return { src: `data:image/png;base64,${image}` };
+  throw new Error("Gemini 回應中沒有圖片資料");
+}
+
+async function callMiniMaxImage(apiKey, imageModel, prompt) {
+  const layout = imageLayoutFromPrompt(prompt);
+  const response = await fetch("https://api.minimax.io/v1/image_generation", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: imageModel,
+      prompt: imagePromptForProvider(prompt),
+      aspect_ratio: layout.minimaxRatio,
+      response_format: "base64"
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || data.base_resp?.status_msg || `MiniMax image request failed: ${response.status}`);
+  const imageBase64 = data.data?.image_base64?.[0];
+  const imageUrl = data.data?.image_urls?.[0];
+  if (imageBase64) return { src: `data:image/jpeg;base64,${imageBase64}` };
+  if (imageUrl) return { src: imageUrl };
+  throw new Error(data.base_resp?.status_msg || "MiniMax 回應中沒有圖片資料");
+}
+
+async function callGlmImage(apiKey, imageModel, prompt) {
+  const layout = imageLayoutFromPrompt(prompt);
+  const response = await fetch("https://api.z.ai/api/paas/v4/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...zAiHeaders(apiKey)
+    },
+    body: JSON.stringify({
+      model: imageModel,
+      prompt: imagePromptForProvider(prompt),
+      size: layout.glmSize
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || data.message || `GLM image request failed: ${response.status}`);
+  const imageUrl = data.data?.[0]?.url;
+  if (imageUrl) return { src: imageUrl };
+  throw new Error("GLM / Z.AI 回應中沒有圖片資料");
+}
+
+async function callProviderImage(providerKey, apiKey, imageModel, prompt) {
+  if (providerKey === "openai") return callOpenAiImage(apiKey, imageModel, prompt);
+  if (providerKey === "gemini") return callGeminiImage(apiKey, imageModel, prompt);
+  if (providerKey === "minimax") return callMiniMaxImage(apiKey, imageModel, prompt);
+  if (providerKey === "glm") return callGlmImage(apiKey, imageModel, prompt);
+  throw new Error(`${selectedProvider().label} 目前沒有原生繪圖模型`);
+}
+
 async function generateImage() {
+  const providerKey = selectedProviderKey();
+  const imageProvider = imageGenerationProviders[providerKey];
   const key = $("apiKey").value.trim();
-  const model = $("modelName").value;
+  const imageModel = $("imageModelName")?.value || imageProvider?.defaultModel || "";
   const prompt = $("promptOutput").value.trim();
   const status = $("drawStatus");
-  if (!key || !prompt) {
-    status.textContent = "請先貼上 OpenAI API key 與圖片提示詞。";
+  if (!imageProvider) {
+    status.textContent = imageGenerationStatusForProvider(providerKey);
     return;
   }
-  if (!model) {
-    status.textContent = "請先等待模型清單載入並選擇模型。";
+  if (!key || !prompt) {
+    status.textContent = `請先確認 ${selectedProvider().label} API key 與圖片提示詞。`;
+    return;
+  }
+  if (!imageModel) {
+    status.textContent = "請先選擇對應的繪圖模型。";
     return;
   }
 
-  status.textContent = "圖片生成中...";
+  status.textContent = `${imageProvider.label} 圖片生成中...`;
   try {
-    const data = await callOpenAiResponses(key, model, prompt, true);
-    const image = responseImage(data);
-    if (!image) throw new Error("回應中沒有圖片資料");
-    $("resultImage").src = `data:image/png;base64,${image}`;
-    status.textContent = `生成完成。建議存入 ${remoteDirs.canvaDesign}`;
+    const image = await callProviderImage(providerKey, key, imageModel, prompt);
+    $("resultImage").src = image.src;
+    status.textContent = `${imageProvider.label} 生成完成。建議存入 ${remoteDirs.canvaDesign}`;
   } catch (error) {
-    status.textContent = `無法生成圖片：${error.message}`;
+    status.textContent = `無法生成圖片：${friendlyProviderError(error)}`;
   }
 }
 
 function openTool(url) {
   const prompt = $("promptOutput")?.value.trim() || "";
+  if (prompt) savePromptDraft(prompt);
   if (prompt) navigator.clipboard.writeText(prompt).catch(() => {});
   window.open(url, "_blank", "noopener,noreferrer");
   $("drawStatus").textContent = prompt ? "已複製提示詞並開啟工具。" : "已開啟工具。";
+}
+
+function initGenerateWorksheetPage() {
+  const prompt = readPromptDraft();
+  if ($("promptOutput")) {
+    $("promptOutput").value = prompt;
+    $("promptOutput").addEventListener("input", () => savePromptDraft());
+  }
+  if ($("drawStatus")) {
+    $("drawStatus").textContent = prompt ? "已自動帶入產生提示詞頁的內容。" : "尚未找到提示詞內容，請先到產生提示詞頁建立，或直接貼上。";
+  }
+
+  $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
+  $("openCanvaEdu").addEventListener("click", () => openTool("https://www.canva.com/education/teachers/"));
+  $("openGeminiImage").addEventListener("click", () => openTool("https://gemini.google/overview/image-generation/"));
+  $("openOpenAiImage").addEventListener("click", () => openTool("https://chatgpt.com/images/"));
 }
 
 function initTemplatesPage() {
@@ -656,6 +1428,8 @@ function initPromptPage() {
   renderVisualTypes();
   fillDraftPrompt();
   if ($("apiKey").value.trim()) fetchProviderModels();
+  updateStageGenerationCue();
+  window.setTimeout(pulseStageGenerationCue, 300);
 
   $("llmProvider").addEventListener("change", () => {
     saveLinkedLlmSettings();
@@ -687,45 +1461,44 @@ function initPromptPage() {
   });
   $("generateLearningFields").addEventListener("click", generateLearningFields);
   $("generatePrompt").addEventListener("click", generatePrompt);
-  $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
+  $("copyStudentPrompt")?.addEventListener("click", (event) => copyPrompt(event));
+  $("copyTeacherPrompt")?.addEventListener("click", (event) => copyPrompt(event));
+  document.querySelectorAll(".copy-split").forEach((button) => {
+    button.addEventListener("click", (event) => copyPrompt(event));
+  });
   $("savePrompt").addEventListener("click", savePromptFile);
-  ["stage", "subject", "topic", "goal", "learningContent", "learningAbility", "style", "ratio", "scaffold", "canvaUse"].forEach((id) => {
-    $(id).addEventListener("input", fillDraftPrompt);
+  $("downloadStudentMindMap")?.addEventListener("click", () => downloadMindMapSvg("student"));
+  $("downloadTeacherMindMap")?.addEventListener("click", () => downloadMindMapSvg("teacher"));
+  $("studentPromptOutput")?.addEventListener("input", () => savePromptDraft());
+  $("teacherPromptOutput")?.addEventListener("input", () => {});
+  $("stage").addEventListener("change", () => {
+    updateStageGenerationCue();
+    pulseStageGenerationCue();
+  });
+  ["stage", "subject", "topic", "goal", "learningContent", "learningAbility", "style", "ratio", "scaffold", "canvaUse", "outputMode"].forEach((id) => {
+    $(id)?.addEventListener("input", fillDraftPrompt);
+    $(id)?.addEventListener("change", fillDraftPrompt);
   });
 }
 
 function initDrawPage() {
-  const linkedSettings = readLinkedLlmSettings();
-  if (linkedSettings.provider && linkedSettings.provider !== "openai") {
-    clearModelOptions(`產生提示詞頁目前使用 ${llmProviders[linkedSettings.provider]?.label || linkedSettings.provider}；生成學習單目前只支援 OpenAI 模型。`);
-  } else {
-    applyLinkedLlmSettings();
-    clearModelOptions("貼上 OpenAI API key 後會自動載入模型。");
-    if ($("apiKey").value.trim()) fetchProviderModels();
-  }
+  applyLinkedLlmSettings();
+  updateDrawProviderUi();
+  clearModelOptions(`貼上 ${selectedProvider().label} API key 後會自動載入模型。`);
+  if ($("drawStatus")) $("drawStatus").textContent = imageGenerationStatusForProvider();
+  if ($("apiKey").value.trim()) fetchProviderModels();
+
   $("apiKey").addEventListener("input", () => {
-    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
-      provider: "openai",
-      apiKey: $("apiKey").value.trim(),
-      model: $("modelName")?.value || ""
-    }));
+    saveLinkedLlmSettings();
     scheduleModelLoad();
   });
   $("apiKey").addEventListener("change", () => {
-    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
-      provider: "openai",
-      apiKey: $("apiKey").value.trim(),
-      model: $("modelName")?.value || ""
-    }));
+    saveLinkedLlmSettings();
     fetchProviderModels();
   });
   $("reloadModels").addEventListener("click", fetchProviderModels);
   $("modelName").addEventListener("change", () => {
-    sessionStorage.setItem(llmSettingsKey, JSON.stringify({
-      provider: "openai",
-      apiKey: $("apiKey").value.trim(),
-      model: $("modelName").value
-    }));
+    saveLinkedLlmSettings();
   });
   $("generateImage").addEventListener("click", generateImage);
   $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
@@ -737,4 +1510,4 @@ function initDrawPage() {
 const page = document.body.dataset.page;
 if (page === "templates") initTemplatesPage();
 if (page === "prompt") initPromptPage();
-if (page === "draw") initDrawPage();
+if (page === "draw") initGenerateWorksheetPage();
