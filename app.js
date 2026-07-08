@@ -578,7 +578,7 @@ function renderLanguageSwitcher() {
       <option value="en">English</option>
     </select>
   `;
-  document.body.appendChild(switcher);
+  (document.querySelector(".topbar") || document.body).appendChild(switcher);
 
   const select = $("languageSelect");
   select.value = savedLanguage;
