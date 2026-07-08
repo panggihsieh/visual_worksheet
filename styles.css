@@ -337,8 +337,7 @@ button.copy-feedback::after {
   z-index: 10;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  gap: 12px;
   padding: 16px clamp(18px, 4vw, 48px);
   border-bottom: 1px solid rgba(215, 222, 232, 0.9);
   background: rgba(251, 252, 254, 0.92);
@@ -400,6 +399,8 @@ nav {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 nav a {
