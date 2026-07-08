@@ -383,6 +383,20 @@ button.copy-feedback::after {
   font-size: clamp(20px, 3vw, 28px);
 }
 
+.topbar-title {
+  display: grid;
+  gap: 3px;
+}
+
+.language-lock-note {
+  max-width: 620px;
+  margin: 2px 0 0;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .brand-row {
   display: flex;
   align-items: center;
