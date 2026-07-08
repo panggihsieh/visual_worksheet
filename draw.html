@@ -27,12 +27,27 @@
           <p class="eyebrow">Linked Prompt</p>
           <h2>把提示詞送到可生成學習單的工具</h2>
           <p class="lead-copy">這裡會自動讀取「產生提示詞」頁目前產出的內容。選擇工具入口後，系統會先複製提示詞，再開啟對應服務。</p>
-          <label class="prompt-panel">
-            目前提示詞
-            <textarea id="promptOutput" rows="16" class="prompt-output" placeholder="請先到「產生提示詞」頁建立內容，或在這裡直接貼上提示詞。"></textarea>
-          </label>
+          <div class="prompt-panel">
+            <span>目前提示詞</span>
+            <div class="prompt-output-grid">
+              <label class="prompt-block">
+                <span class="prompt-block-head">
+                  學生版提示詞
+                  <button id="copyStudentPrompt" type="button" class="inline-copy" data-target="studentPromptOutput">複製學生版</button>
+                </span>
+                <textarea id="studentPromptOutput" rows="12" class="prompt-output split-output" aria-label="學生版提示詞" placeholder="請先到「產生提示詞」頁建立內容，或在這裡直接貼上學生版提示詞。"></textarea>
+              </label>
+              <label class="prompt-block">
+                <span class="prompt-block-head">
+                  教師版提示詞
+                  <button id="copyTeacherPrompt" type="button" class="inline-copy" data-target="teacherPromptOutput">複製教師版</button>
+                </span>
+                <textarea id="teacherPromptOutput" rows="12" class="prompt-output split-output" aria-label="教師版提示詞" placeholder="請先到「產生提示詞」頁建立內容，或在這裡直接貼上教師版提示詞。"></textarea>
+              </label>
+            </div>
+          </div>
           <div class="actions">
-            <button id="copyPrompt" class="primary">複製提示詞</button>
+            <button id="copyPrompt" class="primary" data-target="studentPromptOutput">複製學生版提示詞</button>
             <a id="backToPrompt" class="button-link" href="prompt.html">回到產生提示詞</a>
           </div>
           <p id="drawStatus" class="status" role="status"></p>
@@ -41,10 +56,10 @@
           <article class="tool-entry-card">
             <div>
               <p class="eyebrow">Editable Design</p>
-              <h3>Canva Education</h3>
-              <p>適合把提示詞做成可編輯、可分層、可列印的學習單版面。</p>
+              <h3>Canva AI</h3>
+              <p>適合直接貼上提示詞，請 Canva 產生可編輯、可分層、可列印的學習單版面。</p>
             </div>
-            <button id="openCanvaEdu" class="tool-entry-button" type="button">開啟 Canva Edu 入口</button>
+            <button id="openCanvaEdu" class="tool-entry-button" type="button">開啟 Canva AI 入口</button>
           </article>
           <article class="tool-entry-card">
             <div>
@@ -67,6 +82,6 @@
     </main>
 
     <script src="template_data.js?v=20260707"></script>
-    <script src="app.js?v=20260707-provider-images"></script>
+    <script src="app.js?v=20260708-language-switcher"></script>
   </body>
 </html>

@@ -171,6 +171,297 @@ let selectedTemplate = templates[0];
 let modelLoadTimer;
 const llmSettingsKey = "visualWorksheet.llmSettings";
 const promptDraftKey = "visualWorksheet.promptDraft";
+const promptDraftKeys = {
+  student: "visualWorksheet.promptDraft.student",
+  teacher: "visualWorksheet.promptDraft.teacher"
+};
+const keyProtectionNotice = "安全模式：API key 不會儲存在瀏覽器 sessionStorage；離開頁面時會依設定清除欄位。";
+const languageStorageKey = "visualWorksheet.language";
+const defaultLanguage = "zh-Hant";
+const uiTranslations = {
+  en: {
+    "語言": "Language",
+    "繁中": "繁中",
+    "English": "English",
+    "首頁": "Home",
+    "學習單範本": "Templates",
+    "免費 API Key": "Free API Key",
+    "產生提示詞": "Prompt Builder",
+    "生成學習單": "Generate Worksheet",
+    "視覺化學習單工房": "Visual Worksheet Studio",
+    "選擇一個工具頁開始製作視覺化學習單": "Choose a tool page to start creating visual worksheets",
+    "學習單範本、產生提示詞、生成學習單各自獨立，不共用同一個操作頁面。": "Templates, prompt generation, and worksheet generation are separate workflows.",
+    "查看學習單範本": "View Templates",
+    "視覺化學習單範本": "Visual Worksheet Templates",
+    "學習單範本圖": "Worksheet Template Gallery",
+    "建議老師優先使用這兩種": "Recommended options for teachers",
+    "免費 API Key 取得方式": "How to Get a Free API Key",
+    "適合一般老師先使用。Google AI Studio 可建立 Gemini API key，部分模型有免費額度。": "Recommended for most teachers. Google AI Studio can create Gemini API keys, and some models include free quota.",
+    "適合想使用多種免費模型的老師。OpenRouter 有免費模型集合，但模型速度、限制與可用性可能變動。": "Useful if you want access to many free models. OpenRouter free-model availability, limits, and speed may change.",
+    "前往 Gemini API Key": "Go to Gemini API Key",
+    "官方說明": "Official Docs",
+    "前往 OpenRouter": "Go to OpenRouter",
+    "查看免費模型": "View Free Models",
+    "API key 請老師自行保管，不要貼到公開文件、社群訊息、簡報截圖或學生可看到的頁面。本網站不會把 API key 寫入檔案。": "Please keep your API key private. Do not paste it into public documents, chat messages, presentation screenshots, or student-visible screens. This site does not write API keys to files.",
+    "視覺設計提示詞產生器": "Visual Design Prompt Builder",
+    "API 與學習單條件": "API and Worksheet Settings",
+    "API key 僅用於這次瀏覽器請求，不會寫入檔案。": "The API key is only used for this browser request and is not written to files.",
+    "API / 模型連線": "API / Model Connection",
+    "模型": "Model",
+    "重新載入模型": "Reload Models",
+    "清除 API key": "Clear API key",
+    "離開頁面時自動清除": "Clear automatically when leaving this page",
+    "學習單架構": "Worksheet Structure",
+    "年段": "Grade Band",
+    "低年級": "Lower Grades",
+    "中年級": "Middle Grades",
+    "高年級": "Upper Grades",
+    "學習單大類": "Worksheet Family",
+    "關係運算類": "Relationship",
+    "類運算類": "Classification",
+    "科目": "Subject",
+    "視覺化學習單類型": "Visual Worksheet Type",
+    "學習主題": "Learning Topic",
+    "學習設計": "Learning Design",
+    "用 LLM 產出學習目標 / 內容 / 能力": "Use LLM to Generate Goals / Content / Competencies",
+    "依高年級生成": "Generate for Upper Grades",
+    "年段會同步影響學習目標、內容深度與能力描述。": "The grade band affects goals, content depth, and competency wording.",
+    "學習目標": "Learning Goals",
+    "學習內容": "Learning Content",
+    "學習能力": "Learning Competencies",
+    "輸出設定": "Output Settings",
+    "視覺風格": "Visual Style",
+    "乾淨資訊圖表": "Clean infographic",
+    "手繪課堂筆記": "Hand-drawn classroom notes",
+    "可愛插畫": "Friendly illustration",
+    "極簡黑白列印": "Minimal black-and-white print",
+    "輸出比例": "Output Ratio",
+    "A4 直式": "A4 portrait",
+    "A4 橫式": "A4 landscape",
+    "16:9 投影片": "16:9 slide",
+    "方形社群圖": "Square social graphic",
+    "支架程度": "Scaffolding",
+    "高支架：提供圖示、關鍵詞與句型": "High: icons, keywords, and sentence frames",
+    "中支架：提供提示語與部分填空": "Medium: prompts and partial blanks",
+    "低支架：開放整理與延伸挑戰": "Low: open organization and extension challenge",
+    "產出用途": "Use Case",
+    "可列印視覺化圖解學習單": "Printable visual worksheet",
+    "課堂投影活動頁": "Classroom projection activity",
+    "學生小組討論海報": "Student group discussion poster",
+    "課末形成性評量單": "Exit formative assessment",
+    "輸出形式": "Output Type",
+    "完整視覺化學習單": "Complete visual worksheet",
+    "只輸出 SVG 圖片結構": "SVG-like visual structure only",
+    "提示詞輸出區": "Prompt Output",
+    "產生最佳化提示詞": "Generate Optimized Prompts",
+    "下載提示詞檔案": "Download Prompt File",
+    "下載學生版心智圖 SVG": "Download Student Mind Map SVG",
+    "下載教師版心智圖 SVG": "Download Teacher Mind Map SVG",
+    "送到生成學習單": "Send to Worksheet Generator",
+    "學生版提示詞": "Student Prompt",
+    "教師版提示詞": "Teacher Prompt",
+    "複製學生版": "Copy Student",
+    "複製教師版": "Copy Teacher",
+    "生成學習單": "Generate Worksheet",
+    "把提示詞送到可生成學習單的工具": "Send the prompts to worksheet generation tools",
+    "這裡會自動讀取「產生提示詞」頁目前產出的內容。選擇工具入口後，系統會先複製提示詞，再開啟對應服務。": "This page automatically reads the latest prompts from the Prompt Builder. When you choose a tool, the prompt is copied before the service opens.",
+    "目前提示詞": "Current Prompt",
+    "複製學生版提示詞": "Copy Student Prompt",
+    "回到產生提示詞": "Back to Prompt Builder",
+    "生成工具入口": "Generation Tool Entrances",
+    "適合直接貼上提示詞，請 Canva 產生可編輯、可分層、可列印的學習單版面。": "Best for pasting prompts into Canva to create editable, layered, printable worksheet layouts.",
+    "開啟 Canva AI 入口": "Open Canva AI",
+    "Gemini 繪圖模型": "Gemini Image Model",
+    "適合快速產生學習單草圖、圖像版面與可視覺化的課堂素材。": "Best for quickly generating worksheet drafts, visual layouts, and classroom visuals.",
+    "開啟 Gemini 繪圖入口": "Open Gemini Image",
+    "OpenAI 繪圖模型": "OpenAI Image Model",
+    "適合使用 ChatGPT Images 生成或修改學習單視覺版本。": "Best for creating or revising worksheet visuals with ChatGPT Images.",
+    "開啟 OpenAI 繪圖入口": "Open OpenAI Image",
+    "開啟獨立頁": "Open Detail Page",
+    "用這張產生提示詞": "Use This Template",
+    "開啟 SVG": "Open SVG",
+    "適合概念發想與單元統整。": "Good for concept brainstorming and unit synthesis.",
+    "適合分析原因、問題解決與探究討論。": "Good for cause analysis, problem solving, and inquiry discussion.",
+    "適合比較兩個概念、文本或策略。": "Good for comparing two concepts, texts, or strategies.",
+    "適合程序、實驗步驟與因果流程。": "Good for procedures, experiment steps, and cause-effect flow.",
+    "適合歷史事件、故事順序與歷程整理。": "Good for historical events, story sequence, and process organization.",
+    "適合課前啟動、課中追問與課後反思。": "Good for pre-learning activation, inquiry, and reflection.",
+    "適合整理概念關係與知識架構。": "Good for organizing concept relationships and knowledge structures.",
+    "適合選擇判斷、策略比較與推理練習。": "Good for decision making, strategy comparison, and reasoning practice.",
+    "適合自然循環、系統流程與週期概念。": "Good for natural cycles, system flows, and periodic concepts.",
+    "適合正反比較、優缺點分析與分類整理。": "Good for pros/cons comparison, analysis, and classification.",
+    "心智圖學習單": "Mind Map Worksheet",
+    "魚骨圖學習單": "Fishbone Worksheet",
+    "韋恩圖學習單": "Venn Diagram Worksheet",
+    "流程圖學習單": "Flowchart Worksheet",
+    "時間軸學習單": "Timeline Worksheet",
+    "KWL 表學習單": "KWL Worksheet",
+    "概念圖學習單": "Concept Map Worksheet",
+    "決策樹學習單": "Decision Tree Worksheet",
+    "循環圖學習單": "Cycle Diagram Worksheet",
+    "T 字圖學習單": "T-Chart Worksheet",
+    "心智圖": "Mind Map",
+    "魚骨圖": "Fishbone",
+    "韋恩圖": "Venn Diagram",
+    "流程圖": "Flowchart",
+    "時間軸": "Timeline",
+    "KWL 表": "KWL Chart",
+    "概念圖": "Concept Map",
+    "決策樹": "Decision Tree",
+    "循環圖": "Cycle Diagram",
+    "T 字圖": "T-Chart",
+    "中心主題、放射分支、關鍵詞、延伸問題": "central topic, radial branches, keywords, extension questions",
+    "問題主軸、原因分類、證據格、結論框": "main problem, cause categories, evidence boxes, conclusion box",
+    "重疊比較、共同點、差異點、總結句": "overlap comparison, similarities, differences, summary sentence",
+    "步驟框、箭頭、判斷點、反思題": "step boxes, arrows, decision points, reflection question",
+    "時間節點、事件卡、因果線、回顧欄": "time nodes, event cards, cause-effect line, review field",
+    "已知、想知道、學到、下一步問題": "Know, Want to know, Learned, next question",
+    "核心概念、連結詞、階層節點、例子欄": "core concept, linking words, hierarchy nodes, examples",
+    "選項分支、條件判斷、結果比較、理由欄": "option branches, condition checks, result comparison, reasons",
+    "循環節點、方向箭頭、變化說明、觀察欄": "cycle nodes, directional arrows, change notes, observation field",
+    "雙欄比較、證據列、判斷欄、結論句": "two-column comparison, evidence rows, judgment field, conclusion",
+    "水循環與日常生活": "Water cycle and daily life",
+    "自然科學": "Natural Science",
+    "依 Provider 貼上 API key": "Paste the API key for the selected provider",
+    "請先到「產生提示詞」頁建立內容，或在這裡直接貼上學生版提示詞。": "Create content on the Prompt Builder page first, or paste the student prompt here.",
+    "請先到「產生提示詞」頁建立內容，或在這裡直接貼上教師版提示詞。": "Create content on the Prompt Builder page first, or paste the teacher prompt here.",
+    "本地API key 查詢與設定免費軟體": "Free local API key checker and setup tool"
+  }
+};
+const originalTextNodes = new WeakMap();
+const originalAttributes = new WeakMap();
+const translatableAttributes = ["placeholder", "aria-label", "title", "data-tooltip", "alt"];
+let languageObserver;
+let languageApplyQueued = false;
+
+function currentLanguage() {
+  const storedLanguage = localStorage.getItem(languageStorageKey);
+  return storedLanguage === "en" ? "en" : defaultLanguage;
+}
+
+function translateUiText(text, language = currentLanguage()) {
+  if (language === defaultLanguage) return text;
+  const dictionary = uiTranslations[language] || {};
+  if (dictionary[text]) return dictionary[text];
+  if (/^分類關鍵字 /.test(text)) {
+    return text
+      .replace("分類關鍵字", "Family key")
+      .replace("建議版面元素", "Suggested layout elements");
+  }
+  if (/^依.+生成$/.test(text)) {
+    return `Generate for ${translateUiText(text.replace(/^依/, "").replace(/生成$/, ""), language)}`;
+  }
+  if (/^已套用.+：學習目標、內容深度與能力描述會跟著調整。$/.test(text)) {
+    const label = text.replace(/^已套用/, "").replace(/：學習目標、內容深度與能力描述會跟著調整。$/, "");
+    return `Applied ${translateUiText(label, language)}: goals, content depth, and competency wording will adjust together.`;
+  }
+  if (/^已即時載入 \d+ 個模型。/.test(text)) {
+    return text.replace(/^已即時載入 (\d+) 個模型。/, "Loaded $1 models in real time.").replace("已套用快速生成預設模型：", "Fast default model applied: ");
+  }
+  if (/^正在向 .+ 即時查詢模型/.test(text)) {
+    return text.replace(/^正在向 (.+) 即時查詢模型\.\.\.$/, "Querying $1 models in real time...");
+  }
+  if (/^貼上 .+ API key 後會自動載入模型。$/.test(text)) {
+    return text.replace(/^貼上 (.+) API key 後會自動載入模型。$/, "Models will load automatically after you paste the $1 API key.");
+  }
+  return text;
+}
+
+function preserveWhitespace(original, translated) {
+  const leading = original.match(/^\s*/)?.[0] || "";
+  const trailing = original.match(/\s*$/)?.[0] || "";
+  return `${leading}${translated}${trailing}`;
+}
+
+function shouldSkipTranslationNode(node) {
+  const parent = node.parentElement;
+  if (!parent) return true;
+  return Boolean(parent.closest("script, style, textarea, code, pre, [data-i18n-skip]"));
+}
+
+function translateTextNode(node, language) {
+  if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue);
+  const original = originalTextNodes.get(node);
+  const trimmed = original.trim();
+  if (!trimmed) {
+    if (node.nodeValue !== original) node.nodeValue = original;
+    return;
+  }
+  const translated = language === defaultLanguage ? trimmed : translateUiText(trimmed, language);
+  const nextValue = preserveWhitespace(original, translated);
+  if (node.nodeValue !== nextValue) node.nodeValue = nextValue;
+}
+
+function translateElementAttributes(element, language) {
+  if (element.closest("[data-i18n-skip]")) return;
+  translatableAttributes.forEach((attr) => {
+    if (!element.hasAttribute(attr)) return;
+    let originals = originalAttributes.get(element);
+    if (!originals) {
+      originals = {};
+      originalAttributes.set(element, originals);
+    }
+    if (!Object.prototype.hasOwnProperty.call(originals, attr)) {
+      originals[attr] = element.getAttribute(attr) || "";
+    }
+    const original = originals[attr];
+    const nextValue = language === defaultLanguage ? original : translateUiText(original, language);
+    if (element.getAttribute(attr) !== nextValue) element.setAttribute(attr, nextValue);
+  });
+}
+
+function applyLanguageToPage(language = currentLanguage()) {
+  document.documentElement.lang = language;
+  document.querySelectorAll("[data-i18n-skip]").forEach((element) => {
+    element.querySelectorAll("*").forEach((child) => child.setAttribute("data-i18n-skip", ""));
+  });
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) {
+    if (!shouldSkipTranslationNode(walker.currentNode)) textNodes.push(walker.currentNode);
+  }
+  textNodes.forEach((node) => translateTextNode(node, language));
+  document.querySelectorAll("*").forEach((element) => {
+    if (!element.closest("textarea, script, style")) translateElementAttributes(element, language);
+  });
+}
+
+function queueApplyLanguage() {
+  if (languageApplyQueued) return;
+  languageApplyQueued = true;
+  window.requestAnimationFrame(() => {
+    languageApplyQueued = false;
+    applyLanguageToPage();
+  });
+}
+
+function observeLanguageMutations() {
+  if (languageObserver) return;
+  languageObserver = new MutationObserver(() => {
+    if (currentLanguage() === "en") queueApplyLanguage();
+  });
+  languageObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: translatableAttributes
+  });
+}
+
+function originalElementText(element) {
+  if (!element) return "";
+  const textNodes = [];
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  if (!textNodes.length) return element.textContent?.trim() || "";
+  return textNodes.map((node) => originalTextNodes.get(node) || node.nodeValue || "").join("").trim();
+}
+
+function selectedOptionOriginalText(id, fallback = "") {
+  const option = $(id)?.selectedOptions?.[0];
+  return originalElementText(option) || fallback;
+}
 
 function selectTemplateFromQuery() {
   const id = new URLSearchParams(window.location.search).get("template");
@@ -190,7 +481,12 @@ function selectedProvider() {
 
 function readLinkedLlmSettings() {
   try {
-    return JSON.parse(sessionStorage.getItem(llmSettingsKey)) || {};
+    const settings = JSON.parse(sessionStorage.getItem(llmSettingsKey)) || {};
+    if (settings.apiKey) {
+      delete settings.apiKey;
+      sessionStorage.setItem(llmSettingsKey, JSON.stringify(settings));
+    }
+    return settings;
   } catch (error) {
     return {};
   }
@@ -199,28 +495,85 @@ function readLinkedLlmSettings() {
 function saveLinkedLlmSettings() {
   const settings = {
     provider: selectedProviderKey(),
-    apiKey: $("apiKey")?.value.trim() || "",
     model: $("modelName")?.value || ""
   };
   sessionStorage.setItem(llmSettingsKey, JSON.stringify(settings));
+}
+
+function clearApiKeyField(message = keyProtectionNotice) {
+  if ($("apiKey")) $("apiKey").value = "";
+  clearModelOptions("貼上 API key 後會自動載入模型。");
+  setModelStatus(message);
+}
+
+function protectApiKeyInput() {
+  const input = $("apiKey");
+  if (!input) return;
+
+  ["copy", "cut", "dragstart"].forEach((eventName) => {
+    input.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      setModelStatus("已阻止從 API key 欄位複製或拖曳內容。");
+    });
+  });
+
+  input.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+
+  window.addEventListener("pagehide", () => {
+    if ($("clearKeyOnLeave")?.checked) input.value = "";
+  });
+}
+
+function renderLanguageSwitcher() {
+  if (document.querySelector(".language-switcher")) return;
+
+  const savedLanguage = currentLanguage();
+  const switcher = document.createElement("label");
+  switcher.className = "language-switcher";
+  switcher.innerHTML = `
+    <span>語言</span>
+    <select id="languageSelect" aria-label="語言選擇">
+      <option value="zh-Hant">繁中</option>
+      <option value="en">English</option>
+    </select>
+  `;
+  document.body.appendChild(switcher);
+
+  const select = $("languageSelect");
+  select.value = savedLanguage;
+  document.documentElement.lang = select.value;
+  select.addEventListener("change", () => {
+    localStorage.setItem(languageStorageKey, select.value);
+    applyLanguageToPage(select.value);
+  });
 }
 
 function readPromptDraft() {
   return sessionStorage.getItem(promptDraftKey) || "";
 }
 
+function readPromptDrafts() {
+  const legacyPrompt = readPromptDraft();
+  return {
+    student: sessionStorage.getItem(promptDraftKeys.student) || legacyPrompt,
+    teacher: sessionStorage.getItem(promptDraftKeys.teacher) || ""
+  };
+}
+
 function savePromptDraft(prompt = $("promptOutput")?.value || "") {
-  const value = prompt || $("studentPromptOutput")?.value || "";
-  sessionStorage.setItem(promptDraftKey, value);
+  const studentPrompt = prompt || $("studentPromptOutput")?.value || "";
+  const teacherPrompt = $("teacherPromptOutput")?.value || "";
+  sessionStorage.setItem(promptDraftKey, studentPrompt);
+  sessionStorage.setItem(promptDraftKeys.student, studentPrompt);
+  sessionStorage.setItem(promptDraftKeys.teacher, teacherPrompt);
 }
 
 function applyLinkedLlmSettings() {
   const settings = readLinkedLlmSettings();
   if ($("llmProvider") && llmProviders[settings.provider]) {
     $("llmProvider").value = settings.provider;
-  }
-  if ($("apiKey") && settings.apiKey) {
-    $("apiKey").value = settings.apiKey;
   }
 }
 
@@ -283,7 +636,7 @@ function clearModelOptions(message) {
   setModelStatus(message);
 }
 
-function setModelOptions(models, preferredModel = "") {
+function setModelOptions(models, preferredModel = "", statusSuffix = "") {
   if (!$("modelName")) return;
   $("modelName").innerHTML = models.map((model) => `
     <option value="${model}">${model}</option>
@@ -292,7 +645,7 @@ function setModelOptions(models, preferredModel = "") {
     $("modelName").value = preferredModel;
   }
   $("modelName").disabled = false;
-  setModelStatus(`已即時載入 ${models.length} 個模型。`);
+  setModelStatus(`已即時載入 ${models.length} 個模型。${statusSuffix}`);
   saveLinkedLlmSettings();
 }
 
@@ -310,11 +663,62 @@ function promptFailureAdvice(error) {
   return `產生失敗：${reason}。已先保留本機學生版與教師版提示詞草稿。解決方式：1. 確認 ${provider} API key 正確且額度可用；2. 確認 Provider 與 API key 類型一致；3. 按「重新載入模型」並選擇可用模型；4. 若顯示逾時，請稍後重試或換較快模型；5. 也可以直接複製目前草稿或送到生成學習單頁使用。`;
 }
 
+function promptTimeoutMsForProvider(providerKey = selectedProviderKey()) {
+  const timeoutByProvider = {
+    deepseek: 90000,
+    anthropic: 90000,
+    openrouter: 90000,
+    openai: 60000,
+    gemini: 60000,
+    minimax: 60000,
+    glm: 60000
+  };
+  return timeoutByProvider[providerKey] || 60000;
+}
+
 function filterTextModels(models) {
   const blocked = /(embedding|embed|whisper|tts|audio|speech|image|vision|moderation|dall-e|sora)/i;
   return [...new Set(models)]
     .filter((model) => model && !blocked.test(model))
     .sort((a, b) => a.localeCompare(b));
+}
+
+function fastModelPreference(providerKey, models) {
+  const exactPreferences = {
+    openai: ["gpt-5.2-mini", "gpt-5.1-mini", "gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini"],
+    deepseek: ["deepseek-chat"],
+    minimax: ["MiniMax-M1", "abab6.5s-chat"],
+    glm: ["glm-4-flash", "glm-4.5-flash", "glm-4-air"],
+    anthropic: ["claude-3-5-haiku-latest", "claude-3-haiku-20240307"],
+    gemini: ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+    openrouter: [
+      "openai/gpt-5.2-mini",
+      "openai/gpt-5.1-mini",
+      "openai/gpt-5-mini",
+      "google/gemini-2.5-flash",
+      "deepseek/deepseek-chat"
+    ]
+  };
+  const exact = (exactPreferences[providerKey] || []).find((model) => models.includes(model));
+  if (exact) return exact;
+
+  const scoredModels = models
+    .map((model) => {
+      const lower = model.toLowerCase();
+      let score = 0;
+      if (/(flash|mini|haiku|lite|small|fast|turbo|chat|air)/.test(lower)) score += 20;
+      if (/(pro|max|opus|reason|thinking|r1|o1|o3)/.test(lower)) score -= 20;
+      if (/(preview|experimental|beta)/.test(lower)) score -= 5;
+      return { model, score };
+    })
+    .sort((a, b) => b.score - a.score || a.model.localeCompare(b.model));
+
+  return scoredModels[0]?.model || models[0] || "";
+}
+
+function preferredTextModel(providerKey, models, savedModel = "") {
+  if (savedModel && models.includes(savedModel)) return savedModel;
+  return fastModelPreference(providerKey, models);
 }
 
 async function fetchOpenAiModels(apiKey) {
@@ -418,7 +822,12 @@ async function fetchProviderModels() {
     if (providerKey === "gemini") models = await fetchGeminiModels(apiKey);
     if (providerKey === "openrouter") models = await fetchOpenRouterModels(apiKey);
     if (!models.length) throw new Error("沒有找到可用文字生成模型");
-    setModelOptions(models, readLinkedLlmSettings().model);
+    const savedModel = readLinkedLlmSettings().model;
+    const preferredModel = preferredTextModel(providerKey, models, savedModel);
+    const statusSuffix = savedModel && models.includes(savedModel)
+      ? ""
+      : `已套用快速生成預設模型：${preferredModel}。`;
+    setModelOptions(models, preferredModel, statusSuffix);
     fillDraftPrompt();
   } catch (error) {
     clearModelOptions(`無法即時載入模型：${friendlyProviderError(error)}`);
@@ -711,12 +1120,12 @@ function worksheetBrief() {
     goal: $("goal")?.value.trim() || "",
     learningAbility: $("learningAbility")?.value.trim() || "",
     learningContent: $("learningContent")?.value.trim() || "",
-    style: $("style")?.value || "",
-    ratio: $("ratio")?.value || "",
-    scaffold: $("scaffold")?.value || "",
-    canvaUse: $("canvaUse")?.value || "",
+    style: selectedOptionOriginalText("style", $("style")?.value || ""),
+    ratio: selectedOptionOriginalText("ratio", $("ratio")?.value || ""),
+    scaffold: selectedOptionOriginalText("scaffold", $("scaffold")?.value || ""),
+    canvaUse: selectedOptionOriginalText("canvaUse", $("canvaUse")?.value || ""),
     outputModeKey,
-    outputMode: $("outputMode")?.selectedOptions?.[0]?.textContent || "完整視覺化學習單",
+    outputMode: selectedOptionOriginalText("outputMode", "完整視覺化學習單"),
     template: selectedTemplate?.name || visualType.label,
     promptHint: selectedTemplate?.promptHint || visualType.cue,
     primaryBlueprint: primaryVisualBlueprint(visualType.value, $("topic")?.value.trim() || ""),
@@ -1065,6 +1474,7 @@ ${sourcePrompt}`;
 
   const studentFallback = fallbackPrompt("student");
   const teacherFallback = fallbackPrompt("teacher");
+  const timeoutMs = promptTimeoutMsForProvider();
 
   try {
     const [studentPrompt, teacherPrompt] = await withTimeout(
@@ -1072,8 +1482,8 @@ ${sourcePrompt}`;
         callPromptProvider(promptInstruction(studentFallback)),
         callPromptProvider(promptInstruction(teacherFallback))
       ]),
-      20000,
-      "API 等待超過 20 秒"
+      timeoutMs,
+      `API 等待超過 ${Math.round(timeoutMs / 1000)} 秒`
     );
     if ($("studentPromptOutput")) $("studentPromptOutput").value = studentPrompt || studentFallback;
     if ($("teacherPromptOutput")) $("teacherPromptOutput").value = teacherPrompt || teacherFallback;
@@ -1100,7 +1510,7 @@ async function copyPrompt(event) {
   }
   try {
     await navigator.clipboard.writeText(prompt);
-    if (targetId === "studentPromptOutput") savePromptDraft(prompt);
+    savePromptDraft(targetId === "studentPromptOutput" ? prompt : undefined);
     const status = $("promptStatus") || $("drawStatus");
     if (status) status.textContent = "提示詞已複製。";
     animateCopyButton(button, "已複製");
@@ -1373,7 +1783,7 @@ async function generateImage() {
   const imageProvider = imageGenerationProviders[providerKey];
   const key = $("apiKey").value.trim();
   const imageModel = $("imageModelName")?.value || imageProvider?.defaultModel || "";
-  const prompt = $("promptOutput").value.trim();
+  const prompt = ($("promptOutput")?.value || $("studentPromptOutput")?.value || "").trim();
   const status = $("drawStatus");
   if (!imageProvider) {
     status.textContent = imageGenerationStatusForProvider(providerKey);
@@ -1398,27 +1808,41 @@ async function generateImage() {
   }
 }
 
+function selectedDrawPrompt() {
+  return ($("promptOutput")?.value || $("studentPromptOutput")?.value || "").trim();
+}
+
 function openTool(url) {
-  const prompt = $("promptOutput")?.value.trim() || "";
+  const prompt = selectedDrawPrompt();
   if (prompt) savePromptDraft(prompt);
   if (prompt) navigator.clipboard.writeText(prompt).catch(() => {});
   window.open(url, "_blank", "noopener,noreferrer");
-  $("drawStatus").textContent = prompt ? "已複製提示詞並開啟工具。" : "已開啟工具。";
+  $("drawStatus").textContent = prompt ? "已複製學生版提示詞並開啟工具。" : "已開啟工具。";
 }
 
 function initGenerateWorksheetPage() {
-  const prompt = readPromptDraft();
+  const prompts = readPromptDrafts();
   if ($("promptOutput")) {
-    $("promptOutput").value = prompt;
+    $("promptOutput").value = prompts.student;
     $("promptOutput").addEventListener("input", () => savePromptDraft());
   }
+  if ($("studentPromptOutput")) {
+    $("studentPromptOutput").value = prompts.student;
+    $("studentPromptOutput").addEventListener("input", () => savePromptDraft());
+  }
+  if ($("teacherPromptOutput")) {
+    $("teacherPromptOutput").value = prompts.teacher;
+    $("teacherPromptOutput").addEventListener("input", () => savePromptDraft());
+  }
   if ($("drawStatus")) {
-    $("drawStatus").textContent = prompt ? "已自動帶入產生提示詞頁的內容。" : "尚未找到提示詞內容，請先到產生提示詞頁建立，或直接貼上。";
+    $("drawStatus").textContent = prompts.student || prompts.teacher ? "已自動帶入產生提示詞頁的內容。" : "尚未找到提示詞內容，請先到產生提示詞頁建立，或直接貼上。";
   }
 
-  $("copyPrompt").addEventListener("click", (event) => copyPrompt(event));
-  $("openCanvaEdu").addEventListener("click", () => openTool("https://www.canva.com/education/teachers/"));
-  $("openGeminiImage").addEventListener("click", () => openTool("https://gemini.google/overview/image-generation/"));
+  $("copyPrompt")?.addEventListener("click", (event) => copyPrompt(event));
+  $("copyStudentPrompt")?.addEventListener("click", (event) => copyPrompt(event));
+  $("copyTeacherPrompt")?.addEventListener("click", (event) => copyPrompt(event));
+  $("openCanvaEdu").addEventListener("click", () => openTool("https://www.canva.com/ai-assistant/"));
+  $("openGeminiImage").addEventListener("click", () => openTool("https://gemini.google.com/app"));
   $("openOpenAiImage").addEventListener("click", () => openTool("https://chatgpt.com/images/"));
 }
 
@@ -1431,6 +1855,8 @@ function initPromptPage() {
   if ($("worksheetFamily")) $("worksheetFamily").value = selectedTemplate?.family || "relation";
   applyLinkedLlmSettings();
   updateProviderUi();
+  protectApiKeyInput();
+  if ($("modelStatus")) $("modelStatus").textContent = keyProtectionNotice;
   renderVisualTypes();
   fillDraftPrompt();
   if ($("apiKey").value.trim()) fetchProviderModels();
@@ -1451,6 +1877,7 @@ function initPromptPage() {
     saveLinkedLlmSettings();
     fetchProviderModels();
   });
+  $("clearApiKey")?.addEventListener("click", () => clearApiKeyField("API key 已從欄位清除。"));
   $("reloadModels").addEventListener("click", fetchProviderModels);
   $("modelName").addEventListener("change", () => {
     saveLinkedLlmSettings();
@@ -1476,7 +1903,7 @@ function initPromptPage() {
   $("downloadStudentMindMap")?.addEventListener("click", () => downloadMindMapSvg("student"));
   $("downloadTeacherMindMap")?.addEventListener("click", () => downloadMindMapSvg("teacher"));
   $("studentPromptOutput")?.addEventListener("input", () => savePromptDraft());
-  $("teacherPromptOutput")?.addEventListener("input", () => {});
+  $("teacherPromptOutput")?.addEventListener("input", () => savePromptDraft());
   $("stage").addEventListener("change", () => {
     updateStageGenerationCue();
     pulseStageGenerationCue();
@@ -1514,6 +1941,9 @@ function initDrawPage() {
 }
 
 const page = document.body.dataset.page;
+renderLanguageSwitcher();
 if (page === "templates") initTemplatesPage();
 if (page === "prompt") initPromptPage();
 if (page === "draw") initGenerateWorksheetPage();
+observeLanguageMutations();
+applyLanguageToPage();

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>產生提示詞｜視覺化學習單工房</title>
-    <link rel="stylesheet" href="styles.css?v=20260707-no-numbered-panels">
+    <link rel="stylesheet" href="styles.css?v=20260708-language-switcher">
   </head>
   <body data-page="prompt">
     <header class="topbar">
@@ -51,6 +51,13 @@
                 LLM API Key
                 <input id="apiKey" type="password" autocomplete="off" placeholder="依 Provider 貼上 API key">
               </label>
+              <div class="api-key-security">
+                <button id="clearApiKey" type="button">清除 API key</button>
+                <label class="checkbox-label">
+                  <input id="clearKeyOnLeave" type="checkbox" checked>
+                  <span>離開頁面時自動清除</span>
+                </label>
+              </div>
               <label>
                 模型
                 <select id="modelName"></select>
@@ -206,6 +213,6 @@
     </main>
 
     <script src="template_data.js?v=20260707"></script>
-    <script src="app.js?v=20260707-prompt-status-result"></script>
+    <script src="app.js?v=20260708-language-switcher"></script>
   </body>
 </html>
