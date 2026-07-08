@@ -219,6 +219,8 @@ const uiTranslations = {
     "學習單大類": "Worksheet Family",
     "關係運算類": "Relationship",
     "類運算類": "Classification",
+    "用來看見概念、人物、事件、原因、證據、時間與系統之間的關係。": "Helps students see relationships among concepts, people, events, causes, evidence, time, and systems.",
+    "用來分類、比較、歸納、對照、判斷類別與整理共同/差異屬性。": "Helps students classify, compare, generalize, contrast, judge categories, and organize shared or different attributes.",
     "科目": "Subject",
     "視覺化學習單類型": "Visual Worksheet Type",
     "學習主題": "Learning Topic",
@@ -311,7 +313,14 @@ const uiTranslations = {
     "循環圖": "Cycle Diagram",
     "T 字圖": "T-Chart",
     "中心主題、放射分支、關鍵詞、延伸問題": "central topic, radial branches, keywords, extension questions",
+    "中心主題、放射分支、關鍵詞、例子、延伸問題": "central topic, radial branches, keywords, examples, extension questions",
     "問題主軸、原因分類、證據格、結論框": "main problem, cause categories, evidence boxes, conclusion box",
+    "核心概念、階層節點、連結詞、例子欄": "core concept, hierarchy nodes, linking words, example fields",
+    "步驟框、箭頭、判斷點、反思題": "step boxes, arrows, decision points, reflection question",
+    "時間節點、事件卡、因果線、回顧欄": "time nodes, event cards, cause-effect line, review field",
+    "循環節點、方向箭頭、變化說明、觀察欄": "cycle nodes, directional arrows, change notes, observation field",
+    "兩個或三個重疊圓、共同點、差異點、總結句": "two or three overlapping circles, similarities, differences, summary sentence",
+    "選項分支、條件判斷、結果比較、理由欄": "option branches, condition checks, result comparison, reason field",
     "重疊比較、共同點、差異點、總結句": "overlap comparison, similarities, differences, summary sentence",
     "步驟框、箭頭、判斷點、反思題": "step boxes, arrows, decision points, reflection question",
     "時間節點、事件卡、因果線、回顧欄": "time nodes, event cards, cause-effect line, review field",
@@ -320,6 +329,16 @@ const uiTranslations = {
     "選項分支、條件判斷、結果比較、理由欄": "option branches, condition checks, result comparison, reasons",
     "循環節點、方向箭頭、變化說明、觀察欄": "cycle nodes, directional arrows, change notes, observation field",
     "雙欄比較、證據列、判斷欄、結論句": "two-column comparison, evidence rows, judgment field, conclusion",
+    "概念發想、先備知識、單元統整": "concept brainstorming, prior knowledge, unit synthesis",
+    "概念階層、概念連結、關係說明": "concept hierarchy, concept links, relationship explanation",
+    "原因分析、問題診斷、證據整理": "cause analysis, problem diagnosis, evidence organization",
+    "步驟操作、實驗流程、解題程序": "procedures, experiment flow, problem-solving process",
+    "事件順序、歷史脈絡、過程變化": "event sequence, historical context, process change",
+    "週期、循環系統、重複變化": "cycles, cyclic systems, repeated change",
+    "比較異同、共同點與差異點": "compare similarities, shared points, and differences",
+    "雙欄比較、觀點對照、證據判斷": "two-column comparison, viewpoint contrast, evidence judgment",
+    "已知分類、問題歸納、學習前後對照": "known-category sorting, question grouping, before-and-after learning comparison",
+    "條件判斷、分類規則、選擇策略": "condition judgment, classification rules, choice strategies",
     "水循環與日常生活": "Water cycle and daily life",
     "自然科學": "Natural Science",
     "依 Provider 貼上 API key": "Paste the API key for the selected provider",
@@ -358,6 +377,38 @@ let languageApplyQueued = false;
 function currentLanguage() {
   const storedLanguage = localStorage.getItem(languageStorageKey);
   return storedLanguage === "en" ? "en" : defaultLanguage;
+}
+
+function isEnglishGeneration() {
+  return currentLanguage() === "en";
+}
+
+function generationLanguageProfile() {
+  if (isEnglishGeneration()) {
+    return {
+      languageName: "English",
+      worksheetNote: "Generating an English worksheet.",
+      jsonInstruction: "Output English JSON. Do not explain and do not use markdown. If any source value is in Traditional Chinese, translate it into natural English.",
+      promptInstruction: "Output a high-quality English prompt for a design tool or image generation model. All worksheet-related information, headings, labels, tasks, answers, and visible worksheet text must be in English. Clearly include the note: Generating an English worksheet.",
+      worksheetRequirement: "Use English for all visible worksheet text, including the title, name/date fields, task directions, chart labels, fill-in prompts, checklist text, and teacher answer text. If any source text is in Traditional Chinese, translate it into natural English. Clearly note that this is generating an English worksheet.",
+      readabilityRequirement: "English readability",
+      avoidOtherLanguage: "Do not leave unrelated Traditional Chinese text on the worksheet unless it is part of a language-learning task explicitly requested by the teacher."
+    };
+  }
+  return {
+    languageName: "繁體中文",
+    worksheetNote: "生成中文學習單。",
+    jsonInstruction: "輸出繁體中文 JSON，不要解釋，不要 markdown。",
+    promptInstruction: "輸出一段可交給設計工具或圖片生成模型使用的高品質繁體中文提示詞。所有學習單相關資訊、標題、標籤、任務、答案與畫面文字都必須使用繁體中文。請明確註明：生成中文學習單。",
+    worksheetRequirement: "全文使用繁體中文，不要把標題或欄位翻成英文；若系統自動產生英文，請改寫為繁體中文。請明確註明這是在生成中文學習單。",
+    readabilityRequirement: "繁體中文可讀性",
+    avoidOtherLanguage: "不要出現無關英文裝飾字。"
+  };
+}
+
+function generationText(value = "") {
+  const text = String(value || "").trim();
+  return isEnglishGeneration() ? translateUiText(text, "en") : text;
 }
 
 function translateUiText(text, language = currentLanguage()) {
@@ -449,6 +500,22 @@ function translateElementAttributes(element, language) {
   });
 }
 
+function applyFormControlLanguage(language = currentLanguage()) {
+  ["subject", "topic"].forEach((id) => {
+    const input = $(id);
+    if (!input) return;
+    if (!input.dataset.originalValue) input.dataset.originalValue = input.value;
+    const original = input.dataset.originalValue;
+    const translated = translateUiText(original, "en");
+    if (language === defaultLanguage && input.value === translated) {
+      input.value = original;
+    }
+    if (language === "en" && (input.value === original || input.value === translated)) {
+      input.value = translated;
+    }
+  });
+}
+
 function applyLanguageToPage(language = currentLanguage()) {
   document.documentElement.lang = language;
   document.querySelectorAll("[data-i18n-skip]").forEach((element) => {
@@ -463,6 +530,7 @@ function applyLanguageToPage(language = currentLanguage()) {
   document.querySelectorAll("*").forEach((element) => {
     if (!element.closest("textarea, script, style")) translateElementAttributes(element, language);
   });
+  applyFormControlLanguage(language);
 }
 
 function queueApplyLanguage() {
@@ -585,6 +653,13 @@ function renderLanguageSwitcher() {
   select.addEventListener("change", () => {
     localStorage.setItem(languageStorageKey, select.value);
     applyLanguageToPage(select.value);
+    if (page === "prompt" && $("visualType")) {
+      renderVisualTypes();
+      applyLanguageToPage(select.value);
+    }
+    if (page === "prompt" && ($("studentPromptOutput") || $("teacherPromptOutput"))) {
+      fillDraftPrompt();
+    }
   });
 }
 
@@ -887,14 +962,24 @@ function visualTypeFromControl() {
   return family.visualTypes.find((item) => item.value === $("visualType")?.value) || family.visualTypes[0];
 }
 
+function visualTypeOptionText(type, language = currentLanguage()) {
+  const label = language === defaultLanguage ? type.label : translateUiText(type.label, language);
+  const fit = language === defaultLanguage ? type.fit : translateUiText(type.fit, language);
+  return language === defaultLanguage ? `${label}：${fit}` : `${label}: ${fit}`;
+}
+
 function renderVisualTypes() {
   if (!$("visualType")) return;
   const family = familyFromControl();
+  const selectedValue = $("visualType").value;
+  const language = currentLanguage();
   $("visualType").innerHTML = family.visualTypes.map((type) => `
-    <option value="${type.value}">${type.label}：${type.fit}</option>
+    <option value="${type.value}">${visualTypeOptionText(type, language)}</option>
   `).join("");
   if (selectedTemplate?.family === normalizeFamilyKey($("worksheetFamily")?.value)) {
     $("visualType").value = selectedTemplate.baseType;
+  } else if (family.visualTypes.some((type) => type.value === selectedValue)) {
+    $("visualType").value = selectedValue;
   }
   updateVisualTypeHelp();
   syncSelectedTemplate();
@@ -905,7 +990,13 @@ function updateVisualTypeHelp() {
   const family = familyFromControl();
   const visualType = visualTypeFromControl();
   const familyKey = normalizeFamilyKey($("worksheetFamily")?.value || selectedTemplate?.family);
-  $("visualTypeHelp").textContent = `分類關鍵字 ${familyKey}｜${family.label}：${family.desc} 建議版面元素：${visualType.cue}。`;
+  const language = currentLanguage();
+  const familyLabel = language === defaultLanguage ? family.label : translateUiText(family.label, language);
+  const familyDesc = language === defaultLanguage ? family.desc : translateUiText(family.desc, language);
+  const visualCue = language === defaultLanguage ? visualType.cue : translateUiText(visualType.cue, language);
+  $("visualTypeHelp").textContent = language === defaultLanguage
+    ? `分類關鍵字 ${familyKey}｜${familyLabel}：${familyDesc} 建議版面元素：${visualCue}。`
+    : `Family key ${familyKey} | ${familyLabel}: ${familyDesc} Suggested layout elements: ${visualCue}.`;
 }
 
 function syncSelectedTemplate() {
@@ -1178,6 +1269,16 @@ function worksheetBrief() {
 
 function localLearningFields() {
   const brief = worksheetBrief();
+  if (isEnglishGeneration()) {
+    const topic = generationText(brief.topic);
+    const visualType = generationText(brief.visualType);
+    const family = generationText(brief.family);
+    return {
+      goal: `Students will understand the core ideas of "${topic}" and use a ${visualType} to organize key points and relationships.`,
+      learningContent: `Main concepts, keywords, examples, common misconceptions, and categories or relationships related to "${topic}" that can be represented with a ${visualType}.`,
+      learningAbility: `Extract key information, organize ${family.toLowerCase()} ideas, explain thinking visually, and complete a short reflection.`
+    };
+  }
   return {
     goal: `學生能理解「${brief.topic}」的核心概念，並使用${brief.visualType}整理重點與關係。`,
     learningContent: `${brief.topic}的主要概念、關鍵詞、例子、常見迷思，以及可用${brief.visualType}呈現的分類或關係。`,
@@ -1194,9 +1295,12 @@ function fillLearningFields(fields) {
 
 function fallbackPrompt(version = "student") {
   const brief = worksheetBrief();
+  const language = generationLanguageProfile();
   const versionLabel = version === "teacher" ? "教師解答版" : "學生空白版";
   const versionRequirement = outputVersionRequirement(version);
   return `請建立一份「${brief.topic}」視覺化學習單。
+
+生成語言註記：${language.worksheetNote}
 
 【最優先主視覺藍圖】
 ${brief.primaryBlueprint}
@@ -1210,6 +1314,7 @@ ${brief.primaryBlueprint}
 - 若工具支援圖層編輯，再建立「圖層化、可編輯設計」：每個標題、題目、填空線、檢核項目、圖表標籤都必須是獨立物件或獨立文字框。
 - 若工具支援圖層編輯，所有文字必須是可點選、可改字、可調整字級與顏色的獨立文字圖層。
 - 不要把中文或任何文字烘焙、壓平、合併到圖片裡。
+- 學習單語言硬性規格：${language.worksheetRequirement}
 - 圖表、框線、箭頭、圖示、色塊請使用形狀或元素分層製作，文字標籤另外用文字框放置。
 - 若工具有模式可選，請使用「文件 / 簡報 / 白板 / 可編輯設計」類型；若使用 Gemini、OpenAI 或其他圖片生成模型，則以完整可列印圖片為目標。
 - 若產出工具支援編輯，完成後必須能逐一選取標題、題目、提示語、填空文字與檢核項目並直接修改。
@@ -1250,7 +1355,7 @@ ${versionRequirement}
 
 設計要求：
 1. 必須遵守「輸出形式硬性規格」；若輸出形式為「只輸出 SVG 圖片結構」，就只建立向量圖解版型，不要做成文字型講義、段落文件或純問答單。
-2. 全文使用繁體中文，不要把標題或欄位翻成英文；若系統自動產生英文，請改寫為繁體中文。
+2. ${language.worksheetRequirement}
 3. 主視覺圖表區必須使用「${brief.visualType}」結構，且必須符合「${brief.template}」的主要圖樣，不能替換成其他圖表或一般文字區塊。
 4. 不可只保留學習單題目而忽略範本圖樣；範本主圖樣必須佔版面最大視覺區域。
 5. 年段調整：${brief.stageReading}
@@ -1260,7 +1365,7 @@ ${versionRequirement}
 9. 保留足夠留白與書寫框，讓學生可以圈選、標註、填空、畫圖或寫短句。
 10. 加入 1 個暖身觀察任務、1 到 2 個核心任務、1 個反思或自我檢核任務；任務文字要短，避免長段落。
 11. 使用高對比、易讀字體、整齊對齊、適合列印與投影的配色。
-12. 不要放答案，不要出現浮水印，不要出現無關英文裝飾字。
+12. 不要放答案，不要出現浮水印。${language.avoidOtherLanguage}
 13. 版面不得超過 35% 的連續文字；若內容太多，請轉成圖示、標籤、填答框或短句。
 
 請直接產生符合以上規格的視覺化學習單。`;
@@ -1452,9 +1557,11 @@ async function generateLearningFields() {
   }
 
   const brief = worksheetBrief();
+  const language = generationLanguageProfile();
   status.textContent = "學習目標、內容、能力產出中...";
-  const input = `請根據以下條件，輸出繁體中文 JSON，不要解釋，不要 markdown。
+  const input = `請根據以下條件，${language.jsonInstruction}
 JSON 欄位必須是 goal, learningContent, learningAbility。
+語言註記：${language.worksheetNote}
 
 年段：${brief.stage}
 科目：${brief.subject}
@@ -1490,7 +1597,8 @@ async function generatePrompt() {
   const generateButton = $("generatePrompt");
   $("promptStatus").textContent = "提示詞產生中...";
   if (generateButton) generateButton.disabled = true;
-  const promptInstruction = (sourcePrompt) => `你是資深教材視覺設計師。請根據以下資料，輸出一段可交給設計工具或圖片生成模型使用的高品質繁體中文提示詞。只輸出提示詞，不要解釋。
+  const language = generationLanguageProfile();
+  const promptInstruction = (sourcePrompt) => `你是資深教材視覺設計師。請根據以下資料，${language.promptInstruction} 只輸出提示詞，不要解釋。
 
 硬性規則：
 - 不要出現「Canva Edu Design」字樣。
@@ -1499,8 +1607,8 @@ async function generatePrompt() {
 - 必須把「視覺化構圖」放在第一優先，避免產生文字型講義。
 - 必須要求主視覺圖表佔 55% 到 70% 版面，文字不得主導版面。
 - 若用於支援圖層的設計工具，必須明確要求建立「圖層化可編輯設計」、可編輯文字圖層、分層形狀元素。
-- 若用於 Gemini、OpenAI 或其他圖片生成模型，必須保留版型結構與繁體中文可讀性，但不要要求模型提供不可行的圖層檔。
-- 必須要求全文繁體中文，避免英文標題與英文欄位。
+- 若用於 Gemini、OpenAI 或其他圖片生成模型，必須保留版型結構與${language.readabilityRequirement}，但不要要求模型提供不可行的圖層檔。
+- 必須遵守語言規格：${language.worksheetRequirement}
 - 必須要求文字不要被壓平到圖片或背景中。
 - 必須保留「輸出形式硬性規格」；若指定只輸出 SVG 圖片結構，就不得產生文字講義、長段落、答案清單或設計師備註。
 - 必須保留「主視覺結構硬性規格」；若指定心智圖，就必須明確寫出中央主題節點與放射分支，不可改成一般學習單。
