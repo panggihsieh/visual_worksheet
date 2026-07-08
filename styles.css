@@ -344,13 +344,18 @@ button.copy-feedback::after {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 16px clamp(18px, 4vw, 48px);
   border-bottom: 1px solid rgba(215, 222, 232, 0.9);
   background: rgba(251, 252, 254, 0.92);
   backdrop-filter: blur(18px);
+}
+
+.topbar > :first-child {
+  min-width: 0;
 }
 
 .language-switcher {
@@ -376,7 +381,7 @@ button.copy-feedback::after {
   height: 28px;
   border-radius: 6px;
   padding: 4px 24px 4px 8px;
-  color: var(--ink);
+  color: #98a2b3;
   font-size: 13px;
   font-weight: 800;
 }
@@ -463,13 +468,14 @@ button.copy-feedback::after {
 
 nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-left: auto;
   justify-content: flex-end;
 }
 
 nav a {
+  flex: 0 0 auto;
   min-height: 34px;
   display: inline-flex;
   align-items: center;
@@ -479,6 +485,7 @@ nav a {
   color: var(--ink);
   text-decoration: none;
   background: #fff;
+  white-space: nowrap;
 }
 
 nav a.active {
@@ -1120,12 +1127,31 @@ textarea {
 @media (max-width: 960px) {
   .topbar,
   .section-head {
+    display: flex;
     align-items: flex-start;
     flex-direction: column;
   }
 
   .topbar {
     padding-right: 180px;
+  }
+
+  .topbar-title {
+    width: 100%;
+  }
+
+  .language-lock-note {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .topbar nav {
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   .topbar .language-switcher {
