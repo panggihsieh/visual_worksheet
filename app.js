@@ -572,7 +572,6 @@ function renderLanguageSwitcher() {
   const switcher = document.createElement("label");
   switcher.className = "language-switcher";
   switcher.innerHTML = `
-    <span>語言</span>
     <select id="languageSelect" aria-label="語言選擇">
       <option value="zh-Hant">繁中</option>
       <option value="en">English</option>
