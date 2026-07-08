@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>產生提示詞｜視覺化學習單工房</title>
-    <link rel="stylesheet" href="styles.css?v=20260708-stage-step-icon">
+    <link rel="stylesheet" href="styles.css?v=20260708-step-icons">
   </head>
   <body data-page="prompt">
     <header class="topbar">
@@ -109,7 +109,7 @@
             <div class="form-grid panel-grid">
               <div class="actions wide compact-actions stage-generation-actions">
                 <button id="generateLearningFields" class="primary stage-generate-button">
-                  <span class="stage-step-icon" aria-hidden="true">1</span>
+                  <span class="step-icon stage-step-icon" aria-hidden="true">1</span>
                   <span>用 LLM 產出學習目標 / 內容 / 能力</span>
                   <strong id="stageGenerateBadge">依高年級生成</strong>
                 </button>
@@ -185,7 +185,10 @@
         <fieldset class="blue-panel prompt-output-panel">
           <legend>提示詞輸出區</legend>
           <div class="actions">
-            <button id="generatePrompt" class="primary">產生最佳化提示詞</button>
+            <button id="generatePrompt" class="primary prompt-generate-button">
+              <span class="step-icon" aria-hidden="true">2</span>
+              <span>產生最佳化提示詞</span>
+            </button>
             <button id="savePrompt">下載提示詞檔案</button>
             <button id="downloadStudentMindMap" type="button">下載學生版心智圖 SVG</button>
             <button id="downloadTeacherMindMap" type="button">下載教師版心智圖 SVG</button>
