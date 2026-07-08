@@ -326,6 +326,27 @@ const uiTranslations = {
     "請先到「產生提示詞」頁建立內容，或在這裡直接貼上學生版提示詞。": "Create content on the Prompt Builder page first, or paste the student prompt here.",
     "請先到「產生提示詞」頁建立內容，或在這裡直接貼上教師版提示詞。": "Create content on the Prompt Builder page first, or paste the teacher prompt here.",
     "本地API key 查詢與設定免費軟體": "Free local API key checker and setup tool"
+    ,"安全模式：API key 不會儲存在瀏覽器 sessionStorage；離開頁面時會依設定清除欄位。": "Safe mode: the API key is not stored in browser sessionStorage; the field is cleared on leave according to your setting.",
+    "貼上 API key 後會自動載入模型。": "Models will load automatically after you paste an API key.",
+    "尚未載入模型": "No models loaded yet",
+    "API key 已從欄位清除。": "The API key field has been cleared.",
+    "已阻止從 API key 欄位複製或拖曳內容。": "Copying or dragging content from the API key field was blocked.",
+    "目前沒有提示詞可複製。": "There is no prompt to copy yet.",
+    "提示詞已複製。": "Prompt copied.",
+    "瀏覽器未允許剪貼簿，已選取提示詞。": "Clipboard access was not allowed; the prompt text has been selected.",
+    "已複製": "Copied",
+    "提示詞產生中...": "Generating prompts...",
+    "產生成功：學生版與教師版提示詞已分別產生。": "Done: student and teacher prompts were generated separately.",
+    "未填 API key，已用本機規則產出，可手動修改。": "No API key entered. Local rules generated a draft that you can edit.",
+    "學習目標、內容、能力產出中...": "Generating goals, content, and competencies...",
+    "已產出，可手動修改。": "Generated. You can edit the result.",
+    "已自動帶入產生提示詞頁的內容。": "Imported content from the Prompt Builder page.",
+    "尚未找到提示詞內容，請先到產生提示詞頁建立，或直接貼上。": "No prompt content found yet. Create it on the Prompt Builder page first, or paste it here.",
+    "已複製學生版提示詞並開啟工具。": "Copied the student prompt and opened the tool.",
+    "已開啟工具。": "Opened the tool.",
+    "請先選擇對應的繪圖模型。": "Please select the matching image model first.",
+    "無原生繪圖模型": "No native image model",
+    "此 Provider 無原生繪圖模型": "This provider has no native image model"
   }
 };
 const originalTextNodes = new WeakMap();
@@ -363,6 +384,24 @@ function translateUiText(text, language = currentLanguage()) {
   }
   if (/^貼上 .+ API key 後會自動載入模型。$/.test(text)) {
     return text.replace(/^貼上 (.+) API key 後會自動載入模型。$/, "Models will load automatically after you paste the $1 API key.");
+  }
+  if (/^貼上 .*API key 後會即時向 .+ 查詢可用模型。$/.test(text)) {
+    return text.replace(/^貼上 (.*API key) 後會即時向 (.+) 查詢可用模型。$/, "After you paste the $1, available models will be queried from $2 in real time.");
+  }
+  if (/^(.+) 目前沒有可直接呼叫的原生繪圖模型/.test(text)) {
+    return text.replace(/^(.+) 目前沒有可直接呼叫的原生繪圖模型；請改用有圖片模型的 Provider，或使用下方外部工具。$/, "$1 does not currently have a directly callable native image model. Use a provider with image models, or use the external tools below.");
+  }
+  if (/^已沿用產生提示詞頁的 .+ API key/.test(text)) {
+    return text.replace(/^已沿用產生提示詞頁的 (.+) API key，並自動使用 (.+) 繪圖模型。$/, "Reusing the $1 API key from the Prompt Builder page and automatically using the $2 image model.");
+  }
+  if (/^請先確認 .+ API key 與圖片提示詞。$/.test(text)) {
+    return text.replace(/^請先確認 (.+) API key 與圖片提示詞。$/, "Please confirm the $1 API key and image prompt first.");
+  }
+  if (/^.+ 圖片生成中\.\.\.$/.test(text)) {
+    return text.replace(/^(.+) 圖片生成中\.\.\.$/, "$1 image generation in progress...");
+  }
+  if (/^.+ 生成完成。建議存入 /.test(text)) {
+    return text.replace(/^(.+) 生成完成。建議存入 (.+)$/, "$1 generation complete. Suggested folder: $2");
   }
   return text;
 }
