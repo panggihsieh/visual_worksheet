@@ -256,6 +256,7 @@ const uiTranslations = {
     "只輸出 SVG 圖片結構": "SVG-like visual structure only",
     "提示詞輸出區": "Prompt Output",
     "產生最佳化提示詞": "Generate Optimized Prompts",
+    "生成中...": "Generating...",
     "下載提示詞檔案": "Download Prompt File",
     "下載學生版心智圖 SVG": "Download Student Mind Map SVG",
     "下載教師版心智圖 SVG": "Download Teacher Mind Map SVG",
@@ -1594,10 +1595,20 @@ function withTimeout(promise, timeoutMs, message) {
   ]);
 }
 
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 async function generatePrompt() {
   const generateButton = $("generatePrompt");
+  const loadingStartedAt = performance.now();
+  const minimumLoadingMs = 650;
   $("promptStatus").textContent = "提示詞產生中...";
-  if (generateButton) generateButton.disabled = true;
+  if (generateButton) {
+    generateButton.disabled = true;
+    generateButton.classList.add("is-loading");
+    generateButton.setAttribute("aria-busy", "true");
+  }
   const language = generationLanguageProfile();
   const promptInstruction = (sourcePrompt) => `你是資深教材視覺設計師。請根據以下資料，${language.promptInstruction} 只輸出提示詞，不要解釋。
 
@@ -1642,7 +1653,13 @@ ${sourcePrompt}`;
     savePromptDraft();
     $("promptStatus").textContent = promptFailureAdvice(error);
   } finally {
-    if (generateButton) generateButton.disabled = false;
+    const elapsed = performance.now() - loadingStartedAt;
+    if (elapsed < minimumLoadingMs) await wait(minimumLoadingMs - elapsed);
+    if (generateButton) {
+      generateButton.disabled = false;
+      generateButton.classList.remove("is-loading");
+      generateButton.removeAttribute("aria-busy");
+    }
   }
 }
 

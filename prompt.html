@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>產生提示詞｜視覺化學習單工房</title>
-    <link rel="stylesheet" href="styles.css?v=20260708-nav-english-muted">
+    <link rel="stylesheet" href="styles.css?v=20260708-prompt-loading">
   </head>
   <body data-page="prompt">
     <header class="topbar">
@@ -189,6 +189,10 @@
             <button id="generatePrompt" class="primary prompt-generate-button">
               <span class="step-icon" aria-hidden="true">2</span>
               <span>產生最佳化提示詞</span>
+              <span class="prompt-loading-indicator" aria-hidden="true">
+                <span class="prompt-loading-clock"></span>
+                <span>生成中...</span>
+              </span>
             </button>
             <button id="savePrompt">下載提示詞檔案</button>
             <button id="downloadStudentMindMap" type="button">下載學生版心智圖 SVG</button>
@@ -218,6 +222,6 @@
     </main>
 
     <script src="template_data.js?v=20260707"></script>
-    <script src="app.js?v=20260708-language-lock-alert-text"></script>
+    <script src="app.js?v=20260708-prompt-loading"></script>
   </body>
 </html>
